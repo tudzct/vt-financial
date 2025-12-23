@@ -1,0 +1,38 @@
+---
+alwaysApply: false
+---
+## 💻 3. Frontend Rules (React + TailwindCSS + Typescripts)
+
+### 📁 Folder Structure
+
+```
+src/
+ ├── api/            # axios instance, endpoint functions
+ ├── assets/         # hình ảnh, icon
+ ├── components/     # component tái sử dụng
+ ├── hooks/          # custom hooks
+ ├── pages/          # trang chính (Home, Login, Dashboard, ...)
+ ├── context/        # React context (auth, theme, ...)
+ ├── router/         # định nghĩa route
+ ├── utils/          # helper functions
+ ├── App.jsx
+ └── main.jsx
+```
+
+### 🧩 Rule chi tiết
+
+* Dùng **functional component + React Hooks**.
+* Quản lý state bằng **Context API hoặc Zustand**.
+* Gọi API qua **Axios instance** trong `src/api/`.
+* Không gọi URL trực tiếp trong component.
+* Dùng **TailwindCSS** cho UI, tránh inline style.
+* Mỗi page/component có nhiệm vụ rõ ràng:
+
+  * UI component → chỉ hiển thị.
+  * Logic component → xử lý dữ liệu, gọi API.
+* Sử dụng `PropTypes` hoặc TypeScript để định nghĩa props.
+* Routing bằng **React Router v6**.
+* Luôn handle loading và error state.
+* Tách riêng phần UI & logic nếu component phức tạp.
+
+---

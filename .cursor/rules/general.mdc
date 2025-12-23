@@ -1,0 +1,110 @@
+---
+alwaysApply: true
+---
+## ⚙️ 1. General Rules
+
+### ✅ Coding Convention
+- **camelCase** → biến, hàm.  
+- **PascalCase** → class, component, entity.  
+- **kebab-case** → thư mục, file (trừ React component).  
+- API prefix: `/api/...`
+- Format JSON response chuẩn:
+  ```json
+  { "success": true, "message": "OK", "data": { ... } }
+````
+
+### 🧾 Git & Environment
+
+* Không commit `.env`, `node_modules/`, `dist/`.
+* Dùng `.env.example` làm template.
+* Mỗi feature làm trong nhánh riêng, commit theo format:
+
+  ```
+  feat(user): add user registration API
+  fix(order): correct total calculation
+  ```
+
+### 🧰 Error & Logging
+
+* Xử lý lỗi qua `GlobalExceptionFilter` (NestJS).
+* Không log thông tin nhạy cảm.
+* Mọi lỗi API trả về:
+
+  ```json
+  { "success": false, "message": "Error message" }
+  ```
+
+
+
+
+
+## 🚀 4. Cursor AI Rules
+
+> Quy tắc dành riêng cho **Cursor IDE** để sinh code tự động đúng chuẩn.
+
+### 🧠 General Behavior
+
+* Khi tạo module mới (NestJS): luôn sinh đủ
+  `controller`, `service`, `entity`, `dto`, `module`.
+* Khi tạo CRUD API: sinh đủ các hàm:
+  `create`, `findAll`, `findOne`, `update`, `delete`.
+* Khi tạo component React: export default, dùng Tailwind, đặt đúng folder.
+* Khi tạo API React: sinh function trong `src/api/`, gọi bằng axiosInstance.
+* Không để logic nghiệp vụ trong controller hoặc UI component.
+* Nếu không chắc yêu cầu, **hỏi user thay vì đoán**.
+* Luôn thêm comment ngắn mô tả ý nghĩa class/hàm.
+
+### ⚡ Example Prompts
+
+* “Create NestJS module for user management (CRUD).”
+* “Add authentication module with JWT in NestJS.”
+* “Generate React page to list users with pagination.”
+* “Connect React form to NestJS endpoint via Axios.”
+
+---
+
+## 🔄 5. API Convention
+
+* Mọi API backend bắt đầu bằng `/api/...`
+* Response chuẩn:
+
+  ```json
+  { "success": true, "message": "Fetched successfully", "data": [...] }
+  ```
+* Lỗi trả về:
+
+  ```json
+  { "success": false, "message": "Resource not found" }
+  ```
+* Dùng HTTP status hợp lý:
+
+  * `200 OK`
+  * `201 Created`
+  * `400 Bad Request`
+  * `401 Unauthorized`
+  * `404 Not Found`
+  * `500 Internal Server Error`
+
+---
+
+## 📦 6. Extension Ideas
+
+Khi project mở rộng, có thể thêm:
+
+* **Swagger** (API Docs) → NestJS `@nestjs/swagger`
+* **Docker Compose** → để deploy nhanh cả backend + frontend
+* **ESLint + Prettier** → enforce code style
+
+---
+
+## 🧭 7. Summary
+
+| Layer    | Framework                                  | Folder Root                | Style Guide            |
+| -------- | ------------------------------------------ | -------------------------- | ---------------------- |
+| Backend  | NestJS                                     | `/server` hoặc `/backend`  | Modular Architecture   |
+| Frontend | React 
+                            | `/client` hoặc `/frontend` | Component-Based        |
+| Shared   | `.env`, `.cursorrules`, `PROJECT_RULES.md` | Root                       | DRY, Clean, Consistent |
+
+---
+
