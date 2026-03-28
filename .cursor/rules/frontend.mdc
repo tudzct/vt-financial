@@ -1,38 +1,48 @@
 ---
 alwaysApply: false
 ---
-## 💻 3. Frontend Rules (React + TailwindCSS + Typescripts)
+## 💻 1. Frontend Rules (React + TailwindCSS + Typescripts)
 
 ### 📁 Folder Structure
 
 ```
-src/
- ├── api/            # axios instance, endpoint functions
- ├── assets/         # hình ảnh, icon
- ├── components/     # component tái sử dụng
- ├── hooks/          # custom hooks
- ├── pages/          # trang chính (Home, Login, Dashboard, ...)
- ├── context/        # React context (auth, theme, ...)
- ├── router/         # định nghĩa route
- ├── utils/          # helper functions
- ├── App.jsx
- └── main.jsx
+src/ 
+├── api/              # axios instance, endpoint functions 
+├── assets/           # images, icons 
+├── components/       # reusable components 
+├── hooks/            # custom hooks 
+├── pages/            # main pages (Home, Login, Dashboard, ...) 
+├── context/          # React context (auth, theme, ...) 
+├── router/           # route definition 
+├── utils/            # helper functions 
+├── App.jsx 
+└── main.jsx
+
 ```
+### 🧩 Detailed Rules
 
-### 🧩 Rule chi tiết
+* Use functional components + React Hooks.
 
-* Dùng **functional component + React Hooks**.
-* Quản lý state bằng **Context API hoặc Zustand**.
-* Gọi API qua **Axios instance** trong `src/api/`.
-* Không gọi URL trực tiếp trong component.
-* Dùng **TailwindCSS** cho UI, tránh inline style.
-* Mỗi page/component có nhiệm vụ rõ ràng:
+* Manage state using the Context API or Zustand.
 
-  * UI component → chỉ hiển thị.
-  * Logic component → xử lý dữ liệu, gọi API.
-* Sử dụng `PropTypes` hoặc TypeScript để định nghĩa props.
-* Routing bằng **React Router v6**.
-* Luôn handle loading và error state.
-* Tách riêng phần UI & logic nếu component phức tạp.
+* Call APIs via the Axios instance in `src/api/`.
+
+* Do not call URLs directly in components.
+
+* Use TailwindCSS for UI, avoid inline styles.
+
+* Each page/component has a clear role:
+
+* UI component → display only.
+
+* Logic component → process data, call APIs.
+
+* Use PropTypes or TypeScript to define props.
+
+* Routing using React Router v6.
+
+* Always handle loading and error state.
+
+* Separate UI and logic if the component is complex.
 
 ---
