@@ -31,8 +31,12 @@ const Login: React.FC = () => {
     try {
       await login(formData.username, formData.password)
       navigate('/dashboard')
-    } catch (err: any) {
-      setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
+    } catch (err: unknown) {
+      setError(
+        err instanceof globalThis.Error
+          ? err.message
+          : 'Đăng nhập thất bại. Vui lòng thử lại.',
+      )
     } finally {
       setIsLoading(false)
     }
@@ -84,4 +88,3 @@ const Login: React.FC = () => {
 }
 
 export default Login
-

@@ -1,13 +1,25 @@
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import Button from '../../components/Button/Button'
 
 const Home: React.FC = () => {
   const { isAuthenticated } = useAuth()
+  const location = useLocation()
+  const registrationMessage = (
+    location.state as { registrationMessage?: string } | null
+  )?.registrationMessage
 
   return (
     <div className="text-center">
+      {registrationMessage && (
+        <div
+          className="mx-auto mb-6 max-w-xl rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800"
+          role="status"
+        >
+          {registrationMessage}
+        </div>
+      )}
       <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
         Chào mừng đến với Financial Management App
       </h1>
@@ -67,4 +79,3 @@ const Home: React.FC = () => {
 }
 
 export default Home
-

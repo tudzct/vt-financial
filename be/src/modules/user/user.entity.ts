@@ -3,29 +3,29 @@ import {
   PrimaryGeneratedColumn,
   Column,
   OneToMany,
-  CreateDateColumn,
-  UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Account } from '../account/account.entity';
 import { Bill } from '../bill/bill.entity';
 import { Goal } from '../goal/goal.entity';
 
 @Entity('Users')
+@Index('UQ_users_normalized_email', ['email'], { unique: true })
 export class User {
   @PrimaryGeneratedColumn({ name: 'user_id' })
-  userId: number;
+  id: number;
 
   @Column({ name: 'full_name', type: 'varchar', length: 255 })
   fullName: string;
 
-  @Column({ name: 'email', type: 'varchar', length: 255, unique: true })
+  @Column({ name: 'email', type: 'varchar', length: 255 })
   email: string;
 
   @Column({ name: 'username', type: 'varchar', length: 255, unique: true })
   username: string;
 
   @Column({ name: 'password', type: 'varchar', length: 255 })
-  password: string;
+  passwordHash: string;
 
   @Column({ name: 'phone_number', type: 'varchar', length: 20, nullable: true })
   phoneNumber: string;
@@ -56,10 +56,9 @@ export class User {
   @OneToMany(() => Goal, (goal) => goal.user)
   goals: Goal[];
 
-//   @CreateDateColumn({ name: 'created_at', type: 'timestamp', nullable: true })
-//   createdAt: Date;
+  //   @CreateDateColumn({ name: 'created_at', type: 'timestamp', nullable: true })
+  //   createdAt: Date;
 
-//   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
-//   updatedAt: Date;
+  //   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
+  //   updatedAt: Date;
 }
-
