@@ -63,4 +63,3 @@ export class Account {
   transactions: Transaction[];
 
 }
-

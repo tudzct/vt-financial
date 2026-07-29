@@ -47,4 +47,3 @@ export class Bill {
   // @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
   // updatedAt: Date;
 }
-

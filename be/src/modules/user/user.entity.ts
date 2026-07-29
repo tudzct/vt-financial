@@ -62,4 +62,3 @@ export class User {
 //   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
 //   updatedAt: Date;
 }
-

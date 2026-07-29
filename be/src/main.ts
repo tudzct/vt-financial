@@ -1,14 +1,28 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Cấu hình CORS
   const allowedOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',')
-    : ['http://localhost:3000', 'http://localhost:5173'];
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+    : [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:5173',
+      ];
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -17,7 +31,10 @@ async function bootstrap() {
         return callback(null, true);
       }
       // Kiểm tra origin có trong danh sách allowed
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      if (
+        allowedOrigins.indexOf(origin) !== -1 ||
+        process.env.NODE_ENV === 'development'
+      ) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));
@@ -63,7 +80,11 @@ async function bootstrap() {
   });
 
   await app.listen(process.env.PORT ?? 8000);
-  console.log(`🚀 Application is running on: http://localhost:${process.env.PORT ?? 8000}`);
-  console.log(`📚 Swagger documentation: http://localhost:${process.env.PORT ?? 8000}/api/docs`);
+  console.log(
+    `🚀 Application is running on: http://localhost:${process.env.PORT ?? 8000}`,
+  );
+  console.log(
+    `📚 Swagger documentation: http://localhost:${process.env.PORT ?? 8000}/api/docs`,
+  );
 }
 bootstrap();

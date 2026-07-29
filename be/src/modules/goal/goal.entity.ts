@@ -15,6 +15,7 @@ export enum GoalType {
   EXPENSE_LIMIT = 'Expense_Limit',
 }
 
+
 @Entity('Goals')
 export class Goal {
   @PrimaryGeneratedColumn({ name: 'goal_id' })
@@ -73,4 +74,3 @@ export class Goal {
   // @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
   // updatedAt: Date;
 }
-

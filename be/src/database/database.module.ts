@@ -23,4 +23,3 @@ import databaseConfig from '../config/database.config';
   ],
 })
 export class DatabaseModule {}
-

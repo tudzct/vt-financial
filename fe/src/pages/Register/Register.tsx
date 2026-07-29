@@ -1,136 +1,239 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
-import { authService } from '../../api/auth.service'
+import { RegisterRequest } from '../../api/auth.service'
+import { RegistrationField, UserFacingError, useAuth } from '../../context/AuthContext'
 import Input from '../../components/Input/Input'
 import Button from '../../components/Button/Button'
-import Error from '../../components/Error/Error'
+
+type FormValues = RegisterRequest
+type FieldName = keyof FormValues
+type FieldErrors = Partial<Record<FieldName, string>>
+
+const passwordAllowedCharacters = new RegExp('^[A-Za-z0-9!@#$%^&*(){}_=+\\[\\],./<>?\\\\|:;-]+$')
+const passwordSpecialCharacter = new RegExp('[!@#$%^&*(){}\\-_=+\\[\\],./<>?\\\\|:;]')
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const namePattern = /^\p{L}+(?: \p{L}+)*$/u
+const registerInputClassName = 'h-12 rounded-md border-[#d9dde5] !bg-white px-3 text-sm !text-[#24262d] caret-[#24262d] placeholder:!text-[#abb1bc] focus:ring-[#2ba59d] dark:border-[#d9dde5] dark:!bg-white dark:!text-[#24262d] dark:placeholder:!text-[#abb1bc]'
+const registerLabelClassName = '!text-[#24262d] dark:!text-[#24262d]'
+
+const getApiErrorField = (message: string): FieldName | undefined => {
+  const normalizedMessage = message.toLowerCase()
+
+  if (normalizedMessage.includes('email')) return 'email'
+  if (normalizedMessage.includes('full name')) return 'fullName'
+  if (normalizedMessage.includes('confirm') || normalizedMessage.includes('passwords do not match')) return 'confirmPassword'
+  if (normalizedMessage.includes('password')) return 'password'
+
+  return undefined
+}
+
+const isRegistrationField = (field: unknown): field is RegistrationField => {
+  return field === 'fullName' || field === 'email' || field === 'password' || field === 'confirmPassword'
+}
+
+const focusField = (field: FieldName): void => {
+  window.requestAnimationFrame(() => {
+    document.querySelector<HTMLInputElement>(`input[name="${field}"]`)?.focus()
+  })
+}
 
 const Register: React.FC = () => {
   const navigate = useNavigate()
+  const { register } = useAuth()
   const [formData, setFormData] = useState({
-    full_name: '',
+    fullName: '',
     email: '',
-    username: '',
     password: '',
     confirmPassword: '',
-    phone_number: '',
   })
-  const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({})
+  const [apiError, setApiError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+
+  const normalizedValues = useMemo(() => ({
+    fullName: formData.fullName.normalize('NFC').trim(),
+    email: formData.email.trim().toLowerCase(),
+  }), [formData.email, formData.fullName])
+
+  const validate = (): FieldErrors => {
+    const errors: FieldErrors = {}
+    const { fullName, email } = normalizedValues
+
+    if (!fullName) errors.fullName = 'Full name is required.'
+    else if (fullName.length < 4 || fullName.length > 25) errors.fullName = 'Use 4 to 25 characters.'
+    else if (!namePattern.test(fullName)) errors.fullName = 'Use letters separated by single spaces only.'
+
+    if (!email) errors.email = 'Email is required.'
+    else if (email.length > 255 || !emailPattern.test(email)) errors.email = 'Enter a valid email address.'
+
+    if (!formData.password) errors.password = 'Password is required.'
+    else if (formData.password.length < 8 || formData.password.length > 64) errors.password = 'Use 8 to 64 characters.'
+    else if (/\s/.test(formData.password)) errors.password = 'Whitespace is not allowed.'
+    else if (!/[a-z]/.test(formData.password)) errors.password = 'Include a lowercase letter.'
+    else if (!/[A-Z]/.test(formData.password)) errors.password = 'Include an uppercase letter.'
+    else if (!/[0-9]/.test(formData.password)) errors.password = 'Include a digit.'
+    else if (!passwordSpecialCharacter.test(formData.password)) errors.password = 'Include a special character.'
+    else if (!passwordAllowedCharacters.test(formData.password)) errors.password = 'Use only supported password characters.'
+    else if (formData.password.toLowerCase() === email) errors.password = 'Password must not match your email.'
+    else if (formData.password.toLowerCase() === email.split('@')[0]) errors.password = 'Password must not match your email local part.'
+
+    if (!formData.confirmPassword) errors.confirmPassword = 'Password confirmation is required.'
+    else if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match.'
+
+    return errors
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
     })
-    setError('')
+    setFieldErrors((current) => ({ ...current, [e.target.name]: undefined }))
+    setApiError('')
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError('')
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp')
+    setApiError('')
+    const errors = validate()
+    setFieldErrors(errors)
+    if (Object.keys(errors).length > 0) {
+      setApiError('Please correct the highlighted fields below.')
+      focusField(Object.keys(errors)[0] as FieldName)
       return
     }
 
     setIsLoading(true)
 
     try {
-      const { confirmPassword, ...registerData } = formData
-      const response = await authService.register(registerData)
-      
-      if (response.success) {
-        navigate('/login', { state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.' } })
-      } else {
-        setError(response.message || 'Đăng ký thất bại. Vui lòng thử lại.')
+      await register({
+        fullName: normalizedValues.fullName,
+        email: normalizedValues.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      })
+      setFormData({ fullName: '', email: '', password: '', confirmPassword: '' })
+      navigate('/')
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Registration failed. Please try again.'
+      const structuredField = error instanceof Error && isRegistrationField((error as UserFacingError).field)
+        ? (error as UserFacingError).field
+        : undefined
+      const errorField = structuredField || getApiErrorField(message)
+
+      setApiError(message)
+      if (errorField) {
+        setFieldErrors((current) => ({ ...current, [errorField]: message }))
+        focusField(errorField)
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="max-w-md mx-auto mt-8">
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-8">
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">
-          Đăng ký
-        </h2>
+    <main className="min-h-[calc(100vh-4rem)] bg-[#f4f5f7] px-5 py-12 dark:bg-[#f4f5f7] sm:py-20">
+      <section className="mx-auto w-full max-w-[400px]" aria-labelledby="register-heading">
+        <div className="mb-6 text-center leading-none" aria-label="Finebank.IO">
+          <span className="text-[28px] font-extrabold tracking-[0.08em] text-[#2ba59d]">FINE</span>
+          <span className="text-[28px] font-medium tracking-[0.08em] text-[#2ba59d]">bank.IO</span>
+        </div>
+        <h1 id="register-heading" className="mb-6 text-center text-xl font-bold text-[#24262d]">
+          Create an account
+        </h1>
 
-        {error && <Error message={error} />}
+        {apiError && (
+          <div role="alert" aria-live="assertive" className="mb-4 flex items-start gap-2 rounded-md border border-[#fecdca] bg-[#fef3f2] px-3 py-2.5 text-sm font-medium text-[#b42318]">
+            <span aria-hidden="true" className="font-bold">!</span>
+            <span>{apiError}</span>
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <Input
-            label="Họ và tên"
-            name="full_name"
+            label="Name"
+            name="fullName"
             type="text"
-            value={formData.full_name}
+            value={formData.fullName}
             onChange={handleChange}
+            error={fieldErrors.fullName}
+            placeholder="Your full name"
             required
             autoFocus
+            disabled={isLoading}
+            labelClassName={registerLabelClassName}
+            className={registerInputClassName}
           />
 
           <Input
-            label="Email"
+            label="Email Address"
             name="email"
             type="email"
             value={formData.email}
             onChange={handleChange}
+            error={fieldErrors.email}
+            placeholder="hello@example.com"
             required
+            disabled={isLoading}
+            labelClassName={registerLabelClassName}
+            className={registerInputClassName}
           />
 
           <Input
-            label="Tên đăng nhập"
-            name="username"
-            type="text"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
-
-          <Input
-            label="Số điện thoại"
-            name="phone_number"
-            type="tel"
-            value={formData.phone_number}
-            onChange={handleChange}
-          />
-
-          <Input
-            label="Mật khẩu"
+            label="Password"
             name="password"
             type="password"
             value={formData.password}
             onChange={handleChange}
+            error={fieldErrors.password}
+            placeholder="••••••••"
             required
-            minLength={6}
+            minLength={8}
+            maxLength={64}
+            disabled={isLoading}
+            labelClassName={registerLabelClassName}
+            className={registerInputClassName}
           />
 
           <Input
-            label="Xác nhận mật khẩu"
+            label="Confirm Password"
             name="confirmPassword"
             type="password"
             value={formData.confirmPassword}
             onChange={handleChange}
+            error={fieldErrors.confirmPassword}
+            placeholder="••••••••"
             required
+            disabled={isLoading}
+            labelClassName={registerLabelClassName}
+            className={registerInputClassName}
           />
 
-          <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
-            Đăng ký
+          <p className="pt-1 text-xs leading-5 text-[#8d94a1]">
+            By continuing, you agree to our <a href="#terms" className="text-[#2ba59d] hover:underline">terms of service.</a>
+          </p>
+
+          <Button type="submit" variant="primary" className="h-12 w-full rounded !bg-[#2ba59d] text-sm hover:!bg-[#248d87] focus:!ring-[#2ba59d]" isLoading={isLoading}>
+            Sign up
           </Button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Đã có tài khoản?{' '}
-          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
-            Đăng nhập ngay
+        <div className="my-6 flex items-center gap-3 text-xs text-[#a2a8b4] before:h-px before:flex-1 before:bg-[#d9dde5] after:h-px after:flex-1 after:bg-[#d9dde5]">
+          or sign up with
+        </div>
+        <button type="button" disabled className="flex h-12 w-full cursor-not-allowed items-center justify-center gap-3 rounded bg-[#e5e8ed] text-sm text-[#667085] opacity-80" aria-disabled="true">
+          <span className="text-lg font-bold text-[#4285f4]">G</span>
+          Continue with Google
+        </button>
+
+        <p className="mt-7 text-center text-sm text-[#a2a8b4]">
+          Already have an account?{' '}
+          <Link to="/login" className="font-medium text-[#2ba59d] hover:underline">
+            Sign in here
           </Link>
         </p>
-      </div>
-    </div>
+      </section>
+    </main>
   )
 }
 
