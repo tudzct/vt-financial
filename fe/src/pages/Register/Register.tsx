@@ -1,136 +1,280 @@
-import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import React, { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { authService } from '../../api/auth.service'
+import { normalizeApiError } from '../../api/error'
 import Input from '../../components/Input/Input'
-import Button from '../../components/Button/Button'
-import Error from '../../components/Error/Error'
+import { useAuth } from '../../context/AuthContext'
+import {
+  REGISTER_FIELDS,
+  normalizeRegisterRequest,
+  validateRegisterForm,
+} from '../../features/register/register.validation'
+import {
+  RegisterField,
+  RegisterFieldErrors,
+  RegisterFormState,
+} from '../../features/register/register.types'
+
+const INITIAL_FORM: RegisterFormState = {
+  fullName: '',
+  email: '',
+  password: '',
+  confirmPassword: '',
+}
 
 const Register: React.FC = () => {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    username: '',
-    password: '',
-    confirmPassword: '',
-    phone_number: '',
-  })
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const { establishSession } = useAuth()
+  const [form, setForm] = useState(INITIAL_FORM)
+  const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({})
+  const [formErrors, setFormErrors] = useState<string[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmation, setShowConfirmation] = useState(false)
+  const submittingRef = useRef(false)
+  const mountedRef = useRef(true)
+  const requestIdRef = useRef(0)
+  const controllerRef = useRef<AbortController | null>(null)
+  const fieldRefs = useRef<Partial<Record<RegisterField, HTMLInputElement>>>({})
+  const errorSummaryRef = useRef<HTMLDivElement>(null)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
-    setError('')
+  useEffect(
+    () => {
+      // React StrictMode runs an extra setup/cleanup cycle in development.
+      // Reset the flag on every setup so failed requests can still clear loading.
+      mountedRef.current = true
+      return () => {
+        mountedRef.current = false
+        controllerRef.current?.abort()
+      }
+    },
+    [],
+  )
+
+  const focusField = (field: RegisterField) => fieldRefs.current[field]?.focus()
+
+  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const field = event.target.name as RegisterField
+    setForm((current) => ({ ...current, [field]: event.target.value }))
+    setFieldErrors((current) => ({ ...current, [field]: undefined }))
+    setFormErrors([])
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (submittingRef.current) return
 
-    if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu xác nhận không khớp')
+    const validationErrors = validateRegisterForm(form)
+    setFieldErrors(validationErrors)
+    setFormErrors([])
+    const firstInvalidField = REGISTER_FIELDS.find((field) => validationErrors[field])
+    if (firstInvalidField) {
+      focusField(firstInvalidField)
       return
     }
 
-    setIsLoading(true)
+    submittingRef.current = true
+    setIsSubmitting(true)
+    const requestId = requestIdRef.current + 1
+    requestIdRef.current = requestId
+    const controller = new AbortController()
+    controllerRef.current = controller
 
     try {
-      const { confirmPassword, ...registerData } = formData
-      const response = await authService.register(registerData)
-      
-      if (response.success) {
-        navigate('/login', { state: { message: 'Đăng ký thành công! Vui lòng đăng nhập.' } })
-      } else {
-        setError(response.message || 'Đăng ký thất bại. Vui lòng thử lại.')
+      const response = await authService.register(normalizeRegisterRequest(form), controller.signal)
+      if (!mountedRef.current || requestId !== requestIdRef.current) return
+      establishSession(response.data.accessToken, response.data.user)
+      navigate('/', { replace: true })
+    } catch (error: unknown) {
+      if (!mountedRef.current || requestId !== requestIdRef.current || controller.signal.aborted) {
+        return
       }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại.')
+      const normalized = normalizeApiError(error)
+      if (normalized.status === 409) {
+        setFieldErrors((current) => ({
+          ...current,
+          email: 'This email is already registered. Sign in or use a different email address.',
+        }))
+        focusField('email')
+      } else if (normalized.status === 400) {
+        const nextFieldErrors: RegisterFieldErrors = {}
+        const remainingMessages: string[] = []
+
+        normalized.messages.forEach((message) => {
+          const lowerMessage = message.toLocaleLowerCase('en-US')
+          if (lowerMessage.includes('confirm') || lowerMessage.includes('do not match')) {
+            nextFieldErrors.confirmPassword ??= message
+          } else if (lowerMessage.includes('password')) {
+            nextFieldErrors.password ??= message
+          } else if (lowerMessage.includes('email')) {
+            nextFieldErrors.email ??= message
+          } else if (lowerMessage.includes('fullname') || lowerMessage.includes('name')) {
+            nextFieldErrors.fullName ??= message
+          } else {
+            remainingMessages.push(message)
+          }
+        })
+
+        setFieldErrors((current) => ({ ...current, ...nextFieldErrors }))
+        setFormErrors(remainingMessages)
+        const firstApiField = REGISTER_FIELDS.find((field) => nextFieldErrors[field])
+        if (firstApiField) focusField(firstApiField)
+        if (remainingMessages.length > 0) {
+          requestAnimationFrame(() => errorSummaryRef.current?.focus())
+        }
+      } else {
+        setFormErrors(normalized.messages)
+        requestAnimationFrame(() => errorSummaryRef.current?.focus())
+      }
     } finally {
-      setIsLoading(false)
+      if (mountedRef.current && requestId === requestIdRef.current) {
+        submittingRef.current = false
+        setIsSubmitting(false)
+      }
     }
   }
 
+  const visibilityButton = (
+    shown: boolean,
+    toggle: React.Dispatch<React.SetStateAction<boolean>>,
+    label: string,
+  ) => (
+    <button
+      type="button"
+      className="rounded p-1 focus:outline-none focus:ring-2 focus:ring-[#299d91]"
+      aria-label={`${shown ? 'Hide' : 'Show'} ${label}`}
+      aria-pressed={shown}
+      onClick={() => toggle((current) => !current)}
+    >
+      <span className="figma-eye-icon block" aria-hidden="true" />
+    </button>
+  )
+
   return (
-    <div className="max-w-md mx-auto mt-8">
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-8">
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">
-          Đăng ký
-        </h2>
+    <section className="finebank-auth-page" aria-labelledby="register-title">
+      <div className="finebank-signup-shell" data-node-id="137:8071">
+        <div className="finebank-logo" aria-label="FINEbank.IO">
+          <strong>FINE</strong>bank.IO
+        </div>
+        <h1 id="register-title">Create an account</h1>
 
-        {error && <Error message={error} />}
+        <form onSubmit={handleSubmit} aria-busy={isSubmitting} noValidate>
+          {formErrors.length > 0 && (
+            <div
+              ref={errorSummaryRef}
+              className="finebank-form-error"
+              role="alert"
+              tabIndex={-1}
+            >
+              {formErrors.map((message) => (
+                <p key={message}>{message}</p>
+              ))}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Họ và tên"
-            name="full_name"
-            type="text"
-            value={formData.full_name}
-            onChange={handleChange}
-            required
-            autoFocus
-          />
+          <div className="finebank-field-stack">
+            <Input
+              ref={(element) => {
+                fieldRefs.current.fullName = element ?? undefined
+              }}
+              id="fullName"
+              label="Name"
+              name="fullName"
+              type="text"
+              autoComplete="name"
+              placeholder="Tanzir Rahman"
+              value={form.fullName}
+              error={fieldErrors.fullName}
+              onChange={handleChange}
+              className="finebank-input"
+              required
+            />
+            <Input
+              ref={(element) => {
+                fieldRefs.current.email = element ?? undefined
+              }}
+              id="email"
+              label="Email Address"
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="hello@example.com"
+              value={form.email}
+              error={fieldErrors.email}
+              onChange={handleChange}
+              className="finebank-input"
+              required
+            />
+            <Input
+              ref={(element) => {
+                fieldRefs.current.password = element ?? undefined
+              }}
+              id="password"
+              label="Password"
+              name="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              value={form.password}
+              error={fieldErrors.password}
+              helperText="Use 8–64 characters with uppercase, lowercase, a number, and a special character."
+              onChange={handleChange}
+              className="finebank-input"
+              trailingElement={visibilityButton(showPassword, setShowPassword, 'password')}
+              required
+            />
+            <Input
+              ref={(element) => {
+                fieldRefs.current.confirmPassword = element ?? undefined
+              }}
+              id="confirmPassword"
+              label="Confirm Password"
+              name="confirmPassword"
+              type={showConfirmation ? 'text' : 'password'}
+              autoComplete="new-password"
+              value={form.confirmPassword}
+              error={fieldErrors.confirmPassword}
+              onChange={handleChange}
+              className="finebank-input"
+              trailingElement={visibilityButton(
+                showConfirmation,
+                setShowConfirmation,
+                'password confirmation',
+              )}
+              required
+            />
+          </div>
 
-          <Input
-            label="Email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
+          <p className="finebank-terms">
+            By continuing, you agree to our <a href="/terms">terms of service.</a>
+          </p>
 
-          <Input
-            label="Tên đăng nhập"
-            name="username"
-            type="text"
-            value={formData.username}
-            onChange={handleChange}
-            required
-          />
+          <button className="finebank-primary-button" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? <span className="finebank-button-loading">Signing up…</span> : 'Sign up'}
+          </button>
 
-          <Input
-            label="Số điện thoại"
-            name="phone_number"
-            type="tel"
-            value={formData.phone_number}
-            onChange={handleChange}
-          />
+          <div className="finebank-divider" aria-hidden="true">
+            <span />
+            <p>or sign up with</p>
+            <span />
+          </div>
 
-          <Input
-            label="Mật khẩu"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-            minLength={6}
-          />
-
-          <Input
-            label="Xác nhận mật khẩu"
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
-
-          <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
-            Đăng ký
-          </Button>
+          <button
+            className="finebank-google-button"
+            type="button"
+            aria-label="Continue with Google (not currently available)"
+            disabled
+          >
+            <span className="figma-google-icon" aria-hidden="true" />
+            Continue with Google
+          </button>
         </form>
 
-        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Đã có tài khoản?{' '}
-          <Link to="/login" className="text-blue-600 dark:text-blue-400 hover:underline">
-            Đăng nhập ngay
-          </Link>
+        <p className="finebank-signin-link">
+          Already have an account? <Link to="/login">Sign in here</Link>
         </p>
       </div>
-    </div>
+    </section>
   )
 }
 

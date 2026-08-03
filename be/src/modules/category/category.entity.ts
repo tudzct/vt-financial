@@ -1,11 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Transaction } from '../transaction/transaction.entity';
 import { Goal } from '../goal/goal.entity';
 
@@ -29,4 +22,3 @@ export class Category {
   // @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
   // updatedAt: Date;
 }
-

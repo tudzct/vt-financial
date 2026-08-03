@@ -1,8 +1,8 @@
 // Định nghĩa các type cho API response
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
-  message: string
+  message: string | string[]
   data?: T
 }
 
@@ -14,6 +14,13 @@ export interface User {
   phone_number?: string
   profile_picture_url?: string
   total_balance: number
+}
+
+export interface AuthenticatedUser {
+  id: number
+  fullName: string
+  email: string
+  username?: string
 }
 
 export interface Account {
@@ -67,4 +74,3 @@ export interface Goal {
   target_achieved: boolean
   last_updated: string
 }
-

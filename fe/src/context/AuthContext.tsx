@@ -1,33 +1,51 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { User } from '../api/types'
+import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react'
 import { authService } from '../api/auth.service'
+import { normalizeApiError } from '../api/error'
+import { AuthenticatedUser, User } from '../api/types'
 
 interface AuthContextType {
-  user: User | null
+  user: AuthenticatedUser | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => void
-  updateUser: (userData: User) => void
+  updateUser: (userData: AuthenticatedUser) => void
+  establishSession: (accessToken: string, userData: AuthenticatedUser) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+const isAuthenticatedUser = (value: unknown): value is AuthenticatedUser => {
+  if (typeof value !== 'object' || value === null) return false
+  const user = value as Record<string, unknown>
+  return (
+    typeof user.id === 'number' &&
+    typeof user.fullName === 'string' &&
+    typeof user.email === 'string'
+  )
+}
+
+const mapLegacyUser = (user: User): AuthenticatedUser => ({
+  id: user.user_id,
+  fullName: user.full_name,
+  email: user.email,
+  username: user.username,
+})
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<AuthenticatedUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Kiểm tra token khi component mount
   useEffect(() => {
     const token = localStorage.getItem('token')
     const savedUser = localStorage.getItem('user')
 
     if (token && savedUser) {
       try {
-        const userData = JSON.parse(savedUser)
+        const userData: unknown = JSON.parse(savedUser)
+        if (!isAuthenticatedUser(userData)) throw new Error('Stored user is invalid')
         setUser(userData)
-        // Có thể gọi API để verify token và lấy user mới nhất
-      } catch (error) {
+      } catch (error: unknown) {
         console.error('Error parsing user data:', error)
         localStorage.removeItem('token')
         localStorage.removeItem('user')
@@ -36,19 +54,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(false)
   }, [])
 
+  const establishSession = (accessToken: string, userData: AuthenticatedUser) => {
+    localStorage.setItem('token', accessToken)
+    localStorage.setItem('user', JSON.stringify(userData))
+    setUser(userData)
+  }
+
   const login = async (username: string, password: string) => {
     try {
       const response = await authService.login({ username, password })
       if (response.success && response.data) {
-        const { user: userData, token } = response.data
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(userData))
-        setUser(userData)
-      } else {
-        throw new Error(response.message || 'Đăng nhập thất bại')
+        establishSession(response.data.token, mapLegacyUser(response.data.user))
+        return
       }
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Đăng nhập thất bại')
+      const message = Array.isArray(response.message) ? response.message[0] : response.message
+      throw new Error(message || 'Đăng nhập thất bại')
+    } catch (error: unknown) {
+      throw new Error(normalizeApiError(error).messages[0] || 'Đăng nhập thất bại')
     }
   }
 
@@ -57,7 +79,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null)
   }
 
-  const updateUser = (userData: User) => {
+  const updateUser = (userData: AuthenticatedUser) => {
     setUser(userData)
     localStorage.setItem('user', JSON.stringify(userData))
   }
@@ -71,6 +93,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         login,
         logout,
         updateUser,
+        establishSession,
       }}
     >
       {children}
@@ -78,6 +101,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   )
 }
 
+// Context and hook intentionally share one module.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (context === undefined) {
@@ -85,4 +110,3 @@ export const useAuth = () => {
   }
   return context
 }
-

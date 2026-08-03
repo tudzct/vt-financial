@@ -1,11 +1,4 @@
-import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  OneToMany,
-  CreateDateColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Account } from '../account/account.entity';
 import { Bill } from '../bill/bill.entity';
 import { Goal } from '../goal/goal.entity';
@@ -21,14 +14,23 @@ export class User {
   @Column({ name: 'email', type: 'varchar', length: 255, unique: true })
   email: string;
 
+  @Column({
+    name: 'normalized_email',
+    type: 'varchar',
+    length: 255,
+    unique: true,
+    select: false,
+  })
+  normalizedEmail: string;
+
   @Column({ name: 'username', type: 'varchar', length: 255, unique: true })
   username: string;
 
-  @Column({ name: 'password', type: 'varchar', length: 255 })
-  password: string;
+  @Column({ name: 'password', type: 'varchar', length: 255, select: false })
+  passwordHash: string;
 
   @Column({ name: 'phone_number', type: 'varchar', length: 20, nullable: true })
-  phoneNumber: string;
+  phoneNumber: string | null;
 
   @Column({
     name: 'profile_picture_url',
@@ -36,7 +38,7 @@ export class User {
     length: 500,
     nullable: true,
   })
-  profilePictureUrl: string;
+  profilePictureUrl: string | null;
 
   @Column({
     name: 'total_balance',
@@ -55,11 +57,4 @@ export class User {
 
   @OneToMany(() => Goal, (goal) => goal.user)
   goals: Goal[];
-
-//   @CreateDateColumn({ name: 'created_at', type: 'timestamp', nullable: true })
-//   createdAt: Date;
-
-//   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
-//   updatedAt: Date;
 }
-

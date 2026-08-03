@@ -5,6 +5,7 @@ import { transactionService } from '../../api/transaction.service'
 import { Account, Transaction } from '../../api/types'
 import Loading from '../../components/Loading/Loading'
 import Error from '../../components/Error/Error'
+import { normalizeApiError } from '../../api/error'
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth()
@@ -30,8 +31,8 @@ const Dashboard: React.FC = () => {
           // Lấy 5 giao dịch gần nhất
           setRecentTransactions(transactionsRes.data.slice(0, 5))
         }
-      } catch (err: any) {
-        setError(err.message || 'Không thể tải dữ liệu')
+      } catch (error: unknown) {
+        setError(normalizeApiError(error).messages[0] || 'Không thể tải dữ liệu')
       } finally {
         setIsLoading(false)
       }
@@ -54,7 +55,7 @@ const Dashboard: React.FC = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Chào mừng, {user?.full_name || user?.username}!
+          Chào mừng, {user?.fullName || user?.username}!
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           Tổng quan tài chính của bạn
@@ -168,4 +169,3 @@ const Dashboard: React.FC = () => {
 }
 
 export default Dashboard
-

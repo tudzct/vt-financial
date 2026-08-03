@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import NavigationBar from '../NavigationBar/NavigationBar'
@@ -12,6 +12,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, isAuthenticated, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/register'
 
   const handleLogout = () => {
     logout()
@@ -21,7 +23,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm">
+      {!isAuthPage && <header className="bg-white dark:bg-gray-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
@@ -43,7 +45,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               {isAuthenticated ? (
                 <>
                   <span className="text-gray-700 dark:text-gray-300">
-                    {user?.full_name || user?.username}
+                    {user?.fullName || user?.username}
                   </span>
                   <button
                     onClick={handleLogout}
@@ -79,24 +81,23 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             </nav>
           </div>
         </div>
-      </header>
+      </header>}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className={isAuthPage ? 'min-h-screen' : 'max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8'}>
         {children}
       </main>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
+      {!isAuthPage && <footer className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 mt-auto">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <p className="text-center text-gray-600 dark:text-gray-400 text-sm">
             © 2024 Financial Management App. All rights reserved.
           </p>
         </div>
-      </footer>
+      </footer>}
     </div>
   )
 }
 
 export default Layout
-

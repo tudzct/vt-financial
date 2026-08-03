@@ -4,8 +4,6 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { Account } from '../account/account.entity';
 import { Category } from '../category/category.entity';
@@ -57,7 +55,12 @@ export class Transaction {
   })
   amount: number;
 
-  @Column({ name: 'payment_method', type: 'varchar', length: 100, nullable: true })
+  @Column({
+    name: 'payment_method',
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+  })
   paymentMethod: string;
 
   @Column({
@@ -86,4 +89,3 @@ export class Transaction {
   // @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
   // updatedAt: Date;
 }
-

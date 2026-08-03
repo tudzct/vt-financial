@@ -13,3 +13,226 @@ body {
   min-height: 100vh;
 }
 
+.finebank-auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: #f4f5f7;
+  color: #191d23;
+}
+
+.finebank-signup-shell {
+  width: 100%;
+  max-width: 400px;
+}
+
+.finebank-logo {
+  margin-bottom: 28px;
+  color: #299d91;
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.finebank-logo strong {
+  font-weight: 800;
+}
+
+.finebank-signup-shell h1 {
+  margin: 0 0 36px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
+  text-align: center;
+}
+
+.finebank-field-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.finebank-field-stack label {
+  margin-bottom: 8px;
+  color: #191d23;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.finebank-auth-page .finebank-input {
+  height: 48px;
+  border-color: #d7d9de;
+  border-radius: 6px;
+  background: transparent;
+  color: #191d23;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.finebank-auth-page .finebank-input::placeholder {
+  color: #9da3ae;
+}
+
+.finebank-auth-page .finebank-input:focus {
+  border-color: #687284;
+  box-shadow: 0 0 0 1px #687284;
+}
+
+.finebank-terms {
+  margin: 28px 0 20px;
+  color: #7d8491;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.finebank-terms a,
+.finebank-signin-link a {
+  color: #299d91;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.finebank-terms a:hover,
+.finebank-signin-link a:hover {
+  text-decoration: underline;
+}
+
+.finebank-primary-button,
+.finebank-google-button {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.finebank-primary-button {
+  background: #299d91;
+  color: white;
+  transition: background 150ms ease, opacity 150ms ease;
+}
+
+.finebank-primary-button:hover:not(:disabled) {
+  background: #248b81;
+}
+
+.finebank-primary-button:focus-visible,
+.finebank-google-button:focus-visible {
+  outline: 3px solid rgba(41, 157, 145, 0.3);
+  outline-offset: 2px;
+}
+
+.finebank-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.finebank-button-loading::before {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-right: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: white;
+  border-radius: 999px;
+  content: '';
+  vertical-align: -2px;
+  animation: finebank-spin 700ms linear infinite;
+}
+
+.finebank-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  margin: 28px 28px;
+  color: #a5aab3;
+  font-size: 14px;
+}
+
+.finebank-divider span {
+  height: 1px;
+  background: #dfe1e5;
+}
+
+.finebank-divider p {
+  margin: 0;
+}
+
+.finebank-google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: #e7e9ed;
+  color: #596275;
+  cursor: not-allowed;
+  font-weight: 500;
+}
+
+.figma-eye-icon,
+.figma-google-icon {
+  display: block;
+  flex: 0 0 auto;
+  background-image: url('./assets/figma-signup-reference.png');
+  background-repeat: no-repeat;
+  background-size: 1440px 1024px;
+}
+
+.figma-eye-icon {
+  width: 24px;
+  height: 24px;
+  background-position: -880px -496px;
+}
+
+.figma-google-icon {
+  width: 24px;
+  height: 24px;
+  background-position: -618px -747px;
+}
+
+.finebank-signin-link {
+  margin: 44px 0 0;
+  color: #a5aab3;
+  font-size: 16px;
+  line-height: 24px;
+  text-align: center;
+}
+
+.finebank-form-error {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border: 1px solid #efb0b0;
+  border-radius: 6px;
+  background: #fff0f0;
+  color: #a52222;
+  font-size: 14px;
+}
+
+.finebank-form-error p {
+  margin: 0;
+}
+
+@keyframes finebank-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 520px) {
+  .finebank-auth-page {
+    align-items: flex-start;
+    padding: 40px 20px;
+  }
+
+  .finebank-logo {
+    font-size: 28px;
+  }
+
+  .finebank-signup-shell h1 {
+    margin-bottom: 28px;
+  }
+}

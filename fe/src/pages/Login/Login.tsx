@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext'
 import Input from '../../components/Input/Input'
 import Button from '../../components/Button/Button'
 import Error from '../../components/Error/Error'
+import { normalizeApiError } from '../../api/error'
 
 const Login: React.FC = () => {
   const navigate = useNavigate()
@@ -31,8 +32,11 @@ const Login: React.FC = () => {
     try {
       await login(formData.username, formData.password)
       navigate('/dashboard')
-    } catch (err: any) {
-      setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
+    } catch (error: unknown) {
+      setError(
+        normalizeApiError(error).messages[0] ||
+          'Đăng nhập thất bại. Vui lòng thử lại.',
+      )
     } finally {
       setIsLoading(false)
     }
@@ -84,4 +88,3 @@ const Login: React.FC = () => {
 }
 
 export default Login
-
