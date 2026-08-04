@@ -1,0 +1,228 @@
+# GENERAL
+
+## ⚙️ 1. General Rules
+
+### ✅ Coding Convention
+- **camelCase** → variable, function.
+- **PascalCase** → class, component, entity.
+- **kebab-case** → folder, file (except React component).
+- API prefix: `/api/...`
+- Standard JSON response format: 
+```json 
+{ "success": true, "message": "OK", "data": { ... } }
+````
+
+### 🧾 Git & Environment
+
+* Do not commit `.env`, `node_modules/`, `dist/`.
+* Use `.env.example` as template.
+* Each feature is created in a separate branch, committed in the following format:
+
+```
+feat(user): add user registration API
+fix(order): correct total calculation
+
+```
+
+### 🧰 Error & Logging
+
+* Handle errors via `GlobalExceptionFilter` (NestJS).
+
+* Do not log sensitive information.
+
+* All API errors return:
+
+```json
+
+{ "success": false, "message": "Error message" }
+
+```
+
+## 🚀 2. Cursor AI Rules
+
+> Rules specific to **Cursor IDE** for generating standard code automatically.
+
+### 🧠 General Behavior
+
+* When creating a new module (NestJS): always generate all of the following:
+
+`controller`, `service`, `entity`, `dto`, `module`.
+
+* When creating a CRUD API: generate all the following functions:
+
+`create`, `findAll`, `findOne`, `update`, `delete`.
+
+* When creating a React component: export defaults, use Tailwind, and place them in the correct folder.
+
+* When creating a React API: generate functions in `src/api/` and call them using AxiosInstance.
+
+* Do not place business logic in controllers or UI components.
+
+* If unsure of the requirements, **ask the user instead of guessing**.
+
+* Always add short comments describing the meaning of the class/function.
+
+### ⚡ Example Prompts
+
+* “Create NestJS module for user management (CRUD).”
+
+* “Add authentication module with JWT in NestJS.”
+
+* “Generate React page to list users with pagination.”
+
+* “Connect React form to NestJS endpoint via Axios.”
+
+---
+
+## 🔄 3. API Convention
+
+* All backend APIs start with `/api/...`
+* Standard Response:
+
+```json
+
+{ "success": true, "message": "Fetched successfully", "data": [...] }
+
+```
+* Error Return:
+
+```json
+
+{ "success": false, "message": "Resource not found" }
+
+```
+* Use appropriate HTTP statuses:
+
+* `200 OK`
+* `201 Created`
+* `400 Bad Request`
+* `401 Unauthorized`
+* `404 Not Found`
+* `500 Internal Server Error`
+
+---
+## 📦 4. Extension Ideas
+
+As the project expands, you can add:
+
+* **Swagger** (API Docs) → NestJS `@nestjs/swagger`
+* **Docker Compose** → to quickly deploy both backend + frontend
+* **ESLint + Prettier** → enforce code style
+
+---
+
+## 🧭 5. Summary
+
+| Layers | Frameworks | Folder Root | Style Guide |
+| -------- | ------------------------------------------ | -------------------------- | ---------------------- |
+| Backend | NestJS | `/server` or `/backend` | Modular Architecture |
+| Frontend | React 
+| `/client` or `/frontend` | Component-Based |
+| Shared | `.env`, `.cursorrules`, `PROJECT_RULES.md` | Root | DRY, Clean, Consistent |
+
+
+# FRONTEND
+
+## 💻 1. Frontend Rules (React + TailwindCSS + Typescripts)
+
+### 📁 Folder Structure
+
+```
+src/ 
+├── api/              # axios instance, endpoint functions 
+├── assets/           # images, icons 
+├── components/       # reusable components 
+├── hooks/            # custom hooks 
+├── pages/            # main pages (Home, Login, Dashboard, ...) 
+├── context/          # React context (auth, theme, ...) 
+├── router/           # route definition 
+├── utils/            # helper functions 
+├── App.jsx 
+└── main.jsx
+
+```
+### 🧩 Detailed Rules
+
+* Use functional components + React Hooks.
+
+* Manage state using the Context API or Zustand.
+
+* Call APIs via the Axios instance in `src/api/`.
+
+* Do not call URLs directly in components.
+
+* Use TailwindCSS for UI, avoid inline styles.
+
+* Each page/component has a clear role:
+
+* UI component → display only.
+
+* Logic component → process data, call APIs.
+
+* Use PropTypes or TypeScript to define props.
+
+* Routing using React Router v6.
+
+* Always handle loading and error state.
+
+* Separate UI and logic if the component is complex.
+
+---
+
+# BACKEND
+
+## 🧱 1. Backend Rules (NestJS)
+
+### 📁 Folder Structure
+
+```
+src/ 
+├── main.ts 
+├── app.module.ts 
+├── config/           # DB, CORS, env config 
+├── common/           # Decorators, guards, interceptors, utils 
+├── modules/          # Each feature is a separate module 
+│ ├── user/ 
+│ │ ├── user.module.ts 
+│ │ ├── user.controller.ts 
+│ │ ├── user.service.ts 
+│ │ ├── user.entity.ts 
+│ │ ├── dto/ 
+│ │ └── interfaces/ 
+├── filters/          # Exception filters 
+├── interceptors/     # Logging, response transform 
+├── database/         # ormconfig.ts 
+└── main.ts
+```
+
+### 🧩 Detailed rules
+
+* Each module includes: 
+
+* `controller.ts`: handle HTTP request, call service. 
+* `service.ts`: contains business logic. 
+* `entity.ts`: database table mapping. 
+* `dto/`: defines request/response (using `class-validator`).
+
+* Business logic **is only in the service**.
+
+* Controller only **receives requests → calls the service → returns a response**.
+
+* Uses the `Repository` pattern of TypeORM.
+
+* Modules only import necessary modules (avoiding import loops).
+
+* Configure `.env` via `@nestjs/config`.
+
+* Consistent response format:
+
+```ts
+
+return { success: true, message: 'User created', data: user };
+
+```
+* Write basic unit tests for the service and controller.
+
+# Additional notes
+
+* Remember to read Database_summary.md. This is a description of the project database, which is mandatory before doing anything else.
