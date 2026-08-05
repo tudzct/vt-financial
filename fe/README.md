@@ -39,7 +39,7 @@ src/
 Tạo file `.env` trong thư mục `fe/`:
 
 ```
-VITE_API_BASE_URL=http://localhost:8000/api
+VITE_API_BASE_URL=http://localhost:8001/api
 ```
 
 ## 📦 Dependencies chính
