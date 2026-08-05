@@ -21,6 +21,14 @@ export class User {
   @Column({ name: 'email', type: 'varchar', length: 255, unique: true })
   email: string;
 
+  @Column({
+    name: 'normalized_email',
+    type: 'varchar',
+    length: 255,
+    unique: true,
+  })
+  normalizedEmail: string;
+
   @Column({ name: 'username', type: 'varchar', length: 255, unique: true })
   username: string;
 
@@ -62,4 +70,3 @@ export class User {
 //   @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
 //   updatedAt: Date;
 }
-
