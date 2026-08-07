@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 /**
  * Custom hook để quản lý localStorage
@@ -32,4 +32,3 @@ export const useLocalStorage = <T>(
 
   return [storedValue, setValue]
 }
-

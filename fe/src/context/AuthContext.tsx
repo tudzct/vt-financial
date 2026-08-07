@@ -1,12 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { User } from '../api/types'
 import { authService } from '../api/auth.service'
+import { User } from '../api/types'
 
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (username: string, password: string) => Promise<void>
   logout: () => void
   updateUser: (userData: User) => void
 }
@@ -36,22 +35,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(false)
   }, [])
 
-  const login = async (username: string, password: string) => {
-    try {
-      const response = await authService.login({ username, password })
-      if (response.success && response.data) {
-        const { user: userData, token } = response.data
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(userData))
-        setUser(userData)
-      } else {
-        throw new Error(response.message || 'Đăng nhập thất bại')
-      }
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Đăng nhập thất bại')
-    }
-  }
-
   const logout = () => {
     authService.logout()
     setUser(null)
@@ -68,7 +51,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         user,
         isAuthenticated: !!user,
         isLoading,
-        login,
         logout,
         updateUser,
       }}
@@ -85,4 +67,3 @@ export const useAuth = () => {
   }
   return context
 }
-

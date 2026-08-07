@@ -2,7 +2,7 @@ import axiosInstance from './axiosInstance'
 import { ApiResponse, User } from './types'
 
 export interface LoginRequest {
-  username: string
+  email: string
   password: string
 }
 
@@ -13,20 +13,23 @@ export interface RegisterRequest {
   confirmPassword: string
 }
 
-export interface RegisteredUser {
+export interface AuthenticatedUser {
   id: number
   fullName: string
   email: string
 }
 
-export interface RegisterData {
+export interface AuthData {
   accessToken: string
-  user: RegisteredUser
+  user: AuthenticatedUser
 }
 
+export type LoginData = AuthData
+export type RegisterData = AuthData
+
 export const authService = {
-  // Đăng nhập
-  login: async (data: LoginRequest): Promise<ApiResponse<{ user: User; token: string }>> => {
+  /** Authenticates a user with their email address and password. */
+  login: async (data: LoginRequest): Promise<ApiResponse<LoginData>> => {
     const response = await axiosInstance.post('/auth/login', data)
     return response.data
   },

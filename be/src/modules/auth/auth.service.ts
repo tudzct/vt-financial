@@ -3,14 +3,16 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { createHash } from 'crypto';
 import { DataSource, Repository } from 'typeorm';
 import { isEmail } from 'class-validator';
 import { User } from '../user/user.entity';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 const bcryptSaltRounds = 10;
@@ -35,6 +37,15 @@ export interface RegistrationResponse {
   };
 }
 
+export interface LoginResponse {
+  success: true;
+  message: 'Login successfully';
+  data: {
+    accessToken: string;
+    user: RegisteredUser;
+  };
+}
+
 interface DatabaseError {
   code?: string;
   errno?: number;
@@ -49,6 +60,55 @@ export class AuthService {
     private readonly dataSource: DataSource,
     private readonly jwtService: JwtService,
   ) {}
+
+  /** Authenticates valid credentials and returns a signed JWT session. */
+  async login(loginDto: LoginDto): Promise<LoginResponse> {
+    const email = this.normalizeEmail(loginDto.email);
+
+    if (!this.isLoginInputValid({ ...loginDto, email })) {
+      throw new BadRequestException('Bad Request');
+    }
+
+    try {
+      const user = await this.userRepository.findOne({
+        where: { normalizedEmail: email },
+      });
+      const passwordMatches = user
+        ? await compare(loginDto.password, user.password)
+        : false;
+
+      if (!user || !passwordMatches) {
+        throw new UnauthorizedException('Email or password is wrong.');
+      }
+
+      const accessToken = await this.jwtService.signAsync({
+        sub: user.userId,
+        email: user.email,
+      });
+      if (!accessToken) {
+        throw new Error('JWT signing returned an empty token');
+      }
+
+      return {
+        success: true,
+        message: 'Login successfully',
+        data: {
+          accessToken,
+          user: {
+            id: user.userId,
+            fullName: user.fullName,
+            email: user.email,
+          },
+        },
+      };
+    } catch (error: unknown) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Internal Server Error');
+    }
+  }
 
   /** Creates one normalized user and signs its JWT atomically. */
   async register(registerDto: RegisterDto): Promise<RegistrationResponse> {
@@ -159,6 +219,17 @@ export class AuthService {
       permittedPasswordPattern.test(password) &&
       registerDto.confirmPassword.length > 0 &&
       registerDto.confirmPassword === password
+    );
+  }
+
+  /** Independently enforces BR-LOG-01 and BR-LOG-02. */
+  isLoginInputValid(loginDto: LoginDto): boolean {
+    return (
+      typeof loginDto.email === 'string' &&
+      typeof loginDto.password === 'string' &&
+      loginDto.email.length > 0 &&
+      isEmail(loginDto.email) &&
+      loginDto.password.length > 0
     );
   }
 
