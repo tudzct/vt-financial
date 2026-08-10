@@ -7,6 +7,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   isLoading: boolean
   login: (username: string, password: string) => Promise<void>
+  establishSession: (accessToken: string, userData: User) => void
   logout: () => void
   updateUser: (userData: User) => void
 }
@@ -52,6 +53,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }
 
+  // Stores the authenticated session returned by a successful auth endpoint.
+  const establishSession = (accessToken: string, userData: User) => {
+    localStorage.setItem('token', accessToken)
+    localStorage.setItem('user', JSON.stringify(userData))
+    setUser(userData)
+  }
+
   const logout = () => {
     authService.logout()
     setUser(null)
@@ -69,6 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isAuthenticated: !!user,
         isLoading,
         login,
+        establishSession,
         logout,
         updateUser,
       }}
@@ -85,4 +94,3 @@ export const useAuth = () => {
   }
   return context
 }
-

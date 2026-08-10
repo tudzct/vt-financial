@@ -1,9 +1,11 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Cấu hình CORS
   const allowedOrigins = process.env.CORS_ORIGINS
@@ -62,8 +64,8 @@ async function bootstrap() {
     },
   });
 
-  await app.listen(process.env.PORT ?? 8000);
-  console.log(`🚀 Application is running on: http://localhost:${process.env.PORT ?? 8000}`);
-  console.log(`📚 Swagger documentation: http://localhost:${process.env.PORT ?? 8000}/api/docs`);
+  await app.listen(process.env.PORT ?? 8001);
+  console.log(`🚀 Application is running on: http://localhost:${process.env.PORT ?? 8001}`);
+  console.log(`📚 Swagger documentation: http://localhost:${process.env.PORT ?? 8001}/api/docs`);
 }
 bootstrap();
