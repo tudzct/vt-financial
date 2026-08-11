@@ -1,87 +1,28 @@
-import React, { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import Input from '../../components/Input/Input'
-import Button from '../../components/Button/Button'
-import Error from '../../components/Error/Error'
+import React from 'react'
+import { Link } from 'react-router-dom'
+import LoginForm from '../../components/LoginForm/LoginForm'
 
+/** Renders the Figma-matched UC-02 login page. */
 const Login: React.FC = () => {
-  const navigate = useNavigate()
-  const { login } = useAuth()
-  const [formData, setFormData] = useState({
-    username: '',
-    password: '',
-  })
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    })
-    setError('')
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
-
-    try {
-      await login(formData.username, formData.password)
-      navigate('/dashboard')
-    } catch (err: any) {
-      setError(err.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   return (
-    <div className="max-w-md mx-auto mt-8">
-      <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-8">
-        <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white mb-6">
-          Đăng nhập
-        </h2>
+    <div className="min-h-screen bg-[#F4F5F7] px-4 py-10 lg:px-0 lg:pb-[268px] lg:pt-40">
+      <div className="mx-auto flex w-full max-w-[400px] flex-col gap-10">
+        <div className="flex flex-col items-center gap-16">
+          <h1 className="whitespace-nowrap text-center font-['Poppins'] text-[40px] font-medium leading-8 tracking-[3.2px] text-[#299D91]">
+            <span className="font-extrabold">FINE</span>bank.<span className="font-extrabold">IO</span>
+          </h1>
+          <LoginForm />
+        </div>
 
-        {error && <Error message={error} />}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            label="Tên đăng nhập"
-            name="username"
-            type="text"
-            value={formData.username}
-            onChange={handleChange}
-            required
-            autoFocus
-          />
-
-          <Input
-            label="Mật khẩu"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-
-          <Button type="submit" variant="primary" className="w-full" isLoading={isLoading}>
-            Đăng nhập
-          </Button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
-          Chưa có tài khoản?{' '}
-          <Link to="/register" className="text-blue-600 dark:text-blue-400 hover:underline">
-            Đăng ký ngay
-          </Link>
-        </p>
+        <Link
+          to="/register"
+          className="h-6 w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-base font-semibold leading-6 text-[#299D91]"
+        >
+          Create an account
+        </Link>
       </div>
     </div>
   )
 }
 
 export default Login
-
