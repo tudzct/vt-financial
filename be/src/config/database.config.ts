@@ -11,7 +11,7 @@ export default registerAs(
     password: process.env.DB_PASSWORD ?? 'trucdang02',
     database: process.env.DB_DATABASE || 'financial1',
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-    synchronize: true, // Tạm thời bật true để tạo bảng tự động
+    synchronize: false, // Preserve the existing schema; use migrations for changes.
     logging: process.env.NODE_ENV === 'development',
   }),
 );

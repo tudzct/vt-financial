@@ -13,15 +13,22 @@ export interface LoginUser {
 }
 
 export interface RegisterRequest {
-  full_name: string
+  fullName: string
   email: string
-  username: string
   password: string
-  phone_number?: string
+  confirmPassword: string
+}
+
+export type RegisterData = { accessToken: string; user: LoginUser }
+
+export interface RegisterResponse {
+  success: boolean
+  message: string | string[]
+  data?: RegisterData
 }
 
 export const authService = {
-  // Đăng nhập
+  /** Authenticates an existing user. */
   login: async (
     data: LoginRequest
   ): Promise<ApiResponse<{ accessToken: string; user: LoginUser }>> => {
@@ -29,19 +36,19 @@ export const authService = {
     return response.data
   },
 
-  // Đăng ký
-  register: async (data: RegisterRequest): Promise<ApiResponse<User>> => {
+  /** Registers a user and returns an authenticated session. */
+  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
     const response = await axiosInstance.post('/auth/register', data)
     return response.data
   },
 
-  // Đăng xuất
+  /** Clears the locally persisted authenticated session. */
   logout: (): void => {
     localStorage.removeItem('token')
     localStorage.removeItem('user')
   },
 
-  // Lấy thông tin user hiện tại
+  /** Retrieves the currently authenticated user. */
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
     const response = await axiosInstance.get('/auth/me')
     return response.data
