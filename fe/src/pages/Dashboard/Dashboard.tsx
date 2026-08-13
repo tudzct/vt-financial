@@ -19,14 +19,14 @@ const Dashboard: React.FC = () => {
         setIsLoading(true)
         const [accountsRes, transactionsRes] = await Promise.all([
           accountService.getAccounts(),
-          transactionService.getTransactions({}),
+          transactionService.getTransactions({ type: 'All', limit: 5, offset: 0 }),
         ])
 
         if (accountsRes.success && accountsRes.data) {
           setAccounts(accountsRes.data)
         }
 
-        if (transactionsRes.success && transactionsRes.data) {
+        if (transactionsRes.data) {
           // Lấy 5 giao dịch gần nhất
           setRecentTransactions(transactionsRes.data.slice(0, 5))
         }

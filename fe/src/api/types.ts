@@ -46,6 +46,14 @@ export interface Transaction {
   category_id?: number;
 }
 
+export type TransactionFilterType = 'All' | 'Revenue' | 'Expense';
+
+export interface TransactionListResponse {
+  data: Transaction[];
+  total: number;
+  hasMore: boolean;
+}
+
 export interface Bill {
   bill_id: number;
   user_id: number;
