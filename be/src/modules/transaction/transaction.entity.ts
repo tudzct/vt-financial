@@ -46,7 +46,7 @@ export class Transaction {
   @Column({ name: 'item_description', type: 'varchar', length: 500 })
   itemDescription: string;
 
-  @Column({ name: 'shop_name', type: 'varchar', length: 255, nullable: true })
+  @Column({ name: 'shop_name', type: 'varchar', length: 255 })
   shopName: string;
 
   @Column({
@@ -57,7 +57,7 @@ export class Transaction {
   })
   amount: number;
 
-  @Column({ name: 'payment_method', type: 'varchar', length: 100, nullable: true })
+  @Column({ name: 'payment_method', type: 'varchar', length: 100 })
   paymentMethod: string;
 
   @Column({
@@ -69,16 +69,16 @@ export class Transaction {
   status: TransactionStatus;
 
   @Column({ name: 'receipt_id', type: 'varchar', length: 255, nullable: true })
-  receiptId: string;
+  receiptId: string | null;
 
   @Column({ name: 'category_id', type: 'int', nullable: true })
-  categoryId: number;
+  categoryId: number | null;
 
   @ManyToOne(() => Category, (category) => category.transactions, {
     nullable: true,
   })
   @JoinColumn({ name: 'category_id' })
-  category: Category;
+  category: Category | null;
 
   // @CreateDateColumn({ name: 'created_at', type: 'timestamp', nullable: true })
   // createdAt: Date;

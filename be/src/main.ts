@@ -1,21 +1,21 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
-import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { ValidationPipe } from '@nestjs/common';
+import { GlobalExceptionFilter } from './filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.useGlobalFilters(new HttpExceptionFilter());
+  app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
       whitelist: true,
       forbidNonWhitelisted: true,
-      exceptionFactory: () => new BadRequestException('Bad Request'),
     }),
   );
+  app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Cấu hình CORS
   const allowedOrigins = process.env.CORS_ORIGINS

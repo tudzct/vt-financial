@@ -6,12 +6,12 @@ export class LoginDto {
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
-  @IsString()
-  @IsNotEmpty()
-  @IsEmail()
+  @IsString({ message: 'Email phải là chuỗi.' })
+  @IsNotEmpty({ message: 'Email không được để trống.' })
+  @IsEmail({}, { message: 'Email không hợp lệ.' })
   email: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsString({ message: 'Mật khẩu phải là chuỗi.' })
+  @IsNotEmpty({ message: 'Mật khẩu không được để trống.' })
   password: string;
 }

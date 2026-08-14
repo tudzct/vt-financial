@@ -6,40 +6,64 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { Request } from 'express';
 
-interface ErrorResponse {
+interface HttpErrorPayload {
   message?: string | string[];
+  error?: string;
 }
 
-/** Converts server errors to the project-wide API error envelope. */
+/** Converts all thrown errors to the application's standard JSON envelope. */
 @Catch()
-export class HttpExceptionFilter implements ExceptionFilter {
+export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost): void {
     const response = host.switchToHttp().getResponse<Response>();
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
-    const exceptionResponse =
-      exception instanceof HttpException ? exception.getResponse() : undefined;
-    const message = this.getMessage(exceptionResponse);
+    const request = host.switchToHttp().getRequest<Request>();
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let message: string | string[] = 'Internal Server Error';
+    let errorName: string | undefined;
 
-    response.status(status).json({
-      success: false,
-      message,
-    });
-  }
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const exceptionResponse = exception.getResponse();
 
-  /** Extracts a safe public message without logging request data. */
-  private getMessage(response: string | object | undefined): string | string[] {
-    if (typeof response === 'string') {
-      return response;
+      if (typeof exceptionResponse === 'string') {
+        message = exceptionResponse;
+      } else {
+        const payload = exceptionResponse as HttpErrorPayload;
+        message = payload.message ?? exception.message;
+        if (
+          Array.isArray(message) &&
+          message.length > 0 &&
+          message.every((item) => item === message[0])
+        ) {
+          message = message[0];
+        }
+        errorName = payload.error;
+      }
+    } else {
+      // Log unhandled exceptions (Internal Server Errors) to the console
+      console.error('Unhandled Exception:', exception);
     }
 
-    if (response && 'message' in response) {
-      return (response as ErrorResponse).message ?? 'Bad Request';
+    const body: {
+      success: false;
+      message: string | string[];
+      error?: string;
+    } = { success: false, message };
+
+    if (
+      status === HttpStatus.BAD_REQUEST &&
+      request.method === 'POST' &&
+      request.path === '/api/v1/transactions'
+    ) {
+      body.message = 'Invalid or missing transaction data';
     }
 
-    return 'Internal Server Error';
+    if (status === HttpStatus.BAD_REQUEST && errorName) {
+      body.error = errorName;
+    }
+
+    response.status(status).json(body);
   }
 }

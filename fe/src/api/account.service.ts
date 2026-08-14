@@ -2,6 +2,13 @@ import axiosInstance from './axiosInstance'
 import { ApiResponse, Account } from './types'
 
 export const accountService = {
+  // Loads accounts owned by the authenticated user for transaction entry.
+  getOwnedAccounts: async (): Promise<Account[]> => {
+    const response = await axiosInstance.get('/v1/accounts')
+    const data = response.data?.data
+    return Array.isArray(data) ? data : data?.accounts ?? []
+  },
+
   // Lấy danh sách tài khoản của user
   getAccounts: async (): Promise<ApiResponse<Account[]>> => {
     const response = await axiosInstance.get('/accounts')

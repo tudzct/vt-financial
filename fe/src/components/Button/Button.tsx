@@ -8,6 +8,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode
 }
 
+/** Renders the shared application button and its loading state. */
 const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
@@ -19,7 +20,7 @@ const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles = 'font-medium rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2'
-  
+
   const variantStyles = {
     primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
     secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
@@ -33,17 +34,17 @@ const Button: React.FC<ButtonProps> = ({
     lg: 'px-6 py-3 text-lg',
   }
 
-  const disabledStyles = 'opacity-50 cursor-not-allowed'
-
   return (
     <button
-      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${disabled || isLoading ? disabledStyles : ''} ${className}`}
+      className={`${baseStyles} ${variantStyles[variant]} ${sizeStyles[size]} ${
+        disabled || isLoading ? 'cursor-not-allowed opacity-50' : ''
+      } ${className}`}
       disabled={disabled || isLoading}
       {...props}
     >
       {isLoading ? (
-        <span className="flex items-center">
-          <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+        <span className="flex items-center justify-center">
+          <svg className="-ml-1 mr-2 h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path
               className="opacity-75"
