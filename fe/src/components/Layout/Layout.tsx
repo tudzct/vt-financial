@@ -22,7 +22,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   if (
     location.pathname === '/login' ||
     location.pathname === '/register' ||
-    location.pathname === '/transactions'
+    location.pathname === '/transactions' ||
+    location.pathname === '/transactions/add'
   ) {
     return <>{children}</>
   }

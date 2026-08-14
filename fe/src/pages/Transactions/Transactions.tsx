@@ -1,6 +1,6 @@
 import axios from 'axios'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { transactionService } from '../../api/transaction.service'
 import { Transaction, TransactionFilterType } from '../../api/types'
 import Loading from '../../components/Loading/Loading'
@@ -13,6 +13,10 @@ const FILTERS: Array<{ label: string; value: TransactionFilterType }> = [
   { label: 'Revenue', value: 'Revenue' },
   { label: 'Expenses', value: 'Expense' },
 ]
+
+/** Accepts only transaction filters supported by the history API. */
+const isTransactionFilterType = (value: string | null): value is TransactionFilterType =>
+  value !== null && ['All', 'Revenue', 'Expense'].includes(value)
 
 const NAVIGATION_ITEMS = [
   { path: '/dashboard', label: 'Overview', icon: '▦' },
@@ -53,8 +57,12 @@ const getTransactionGlyph = (transaction: Transaction): string => {
 const TransactionsPage: React.FC = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [filterType, setFilterType] = useState<TransactionFilterType>('All')
+  const requestedType = searchParams.get('type')
+  const filterType: TransactionFilterType = isTransactionFilterType(requestedType)
+    ? requestedType
+    : 'All'
   const [offset, setOffset] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -229,24 +237,34 @@ const TransactionsPage: React.FC = () => {
         <main className="px-5 pb-16 pt-5 sm:px-8">
           <h1 className="text-[23px] font-normal text-[#8e8e8e]">Recent Transaction</h1>
 
-          <div className="mt-5 flex gap-7" role="tablist" aria-label="Transaction type">
-            {FILTERS.map((filter) => (
-              <button
-                key={filter.value}
-                type="button"
-                role="tab"
-                aria-selected={filterType === filter.value}
-                disabled={isLoading}
-                onClick={() => setFilterType(filter.value)}
-                className={`border-b-2 px-2 pb-3 text-[16px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                  filterType === filter.value
-                    ? 'border-[#2ca59b] text-[#2ca59b]'
-                    : 'border-transparent text-[#4d4d4d]'
-                }`}
-              >
-                {filter.label}
-              </button>
-            ))}
+          <div className="mt-5 flex items-end justify-between gap-4">
+            <div className="flex gap-7" role="tablist" aria-label="Transaction type">
+              {FILTERS.map((filter) => (
+                <button
+                  key={filter.value}
+                  type="button"
+                  role="tab"
+                  aria-selected={filterType === filter.value}
+                  disabled={isLoading}
+                  onClick={() => setSearchParams({ type: filter.value })}
+                  className={`border-b-2 px-2 pb-3 text-[16px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                    filterType === filter.value
+                      ? 'border-[#2ca59b] text-[#2ca59b]'
+                      : 'border-transparent text-[#4d4d4d]'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/transactions/add')}
+              className="flex h-11 items-center gap-2 rounded bg-[#2ca59b] px-5 text-sm font-semibold text-white hover:bg-[#278f87]"
+            >
+              <span className="text-lg" aria-hidden="true">+</span>
+              Add Transaction
+            </button>
           </div>
 
           {error && (

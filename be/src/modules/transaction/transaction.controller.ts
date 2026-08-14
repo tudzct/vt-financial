@@ -2,6 +2,8 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Post,
+  Body,
   HttpStatus,
   Query,
   Req,
@@ -23,6 +25,7 @@ import {
   TransactionListQueryDto,
 } from './dto/transaction-list-query.dto';
 import { TransactionService } from './transaction.service';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -61,6 +64,20 @@ export class TransactionController {
       limit,
       offset,
     );
+  }
+
+  /** Creates a transaction and adjusts its owned account atomically. */
+  @Post()
+  @ApiOperation({ summary: 'Create a transaction' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Transaction created' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid transaction data' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
+  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Creation failed' })
+  create(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: CreateTransactionDto,
+  ) {
+    return this.transactionService.create(request.user.userId, dto);
   }
 
   /** Parses a complete base-10 integer and enforces its lower bound. */

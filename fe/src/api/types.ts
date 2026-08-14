@@ -17,6 +17,7 @@ export interface User {
 }
 
 export interface Account {
+  id?: number;
   account_id: number;
   user_id: number;
   bank_name: string;
@@ -52,6 +53,38 @@ export interface TransactionListResponse {
   data: Transaction[];
   total: number;
   hasMore: boolean;
+}
+
+export interface CreateTransactionPayload {
+  accountId: number;
+  transactionDate: string;
+  type: 'Revenue' | 'Expense';
+  itemDescription: string;
+  category_id?: number;
+  shopName: string;
+  amount: number;
+  paymentMethod: string;
+  status: 'Complete';
+}
+
+export interface CreatedTransaction {
+  transactionId: number;
+  accountId: number;
+  transactionDate: string;
+  type: 'Revenue' | 'Expense';
+  itemDescription: string;
+  shopName: string;
+  amount: number;
+  paymentMethod: string;
+  status: 'Complete' | 'Pending' | 'Failed';
+  receiptId: string | null;
+  createdAt: string;
+  category_id: number | null;
+}
+
+export interface CreateTransactionResponse {
+  message: string;
+  data: CreatedTransaction;
 }
 
 export interface Bill {

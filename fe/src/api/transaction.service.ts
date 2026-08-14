@@ -1,6 +1,8 @@
 import axiosInstance from './axiosInstance'
 import {
   ApiResponse,
+  CreateTransactionPayload,
+  CreateTransactionResponse,
   Transaction,
   TransactionFilterType,
   TransactionListResponse,
@@ -24,8 +26,8 @@ export const transactionService = {
   },
 
   // Creates a transaction.
-  createTransaction: async (data: Omit<Transaction, 'transaction_id'>): Promise<ApiResponse<Transaction>> => {
-    const response = await axiosInstance.post('/transactions', data)
+  createTransaction: async (data: CreateTransactionPayload): Promise<CreateTransactionResponse> => {
+    const response = await axiosInstance.post('/v1/transactions', data)
     return response.data
   },
 
