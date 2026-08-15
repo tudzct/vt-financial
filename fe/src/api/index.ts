@@ -8,4 +8,4 @@ export * from './transaction.service'
 export * from './category.service'
 export * from './bill.service'
 export * from './goal.service'
-
+export * from './expense.service'

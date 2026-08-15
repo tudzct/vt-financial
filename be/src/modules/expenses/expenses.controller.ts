@@ -1,7 +1,9 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   HttpStatus,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -20,7 +22,10 @@ interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
 }
 
-/** Exposes the protected monthly expense summary endpoint. */
+const INVALID_MONTH_MESSAGE =
+  'Tham số month không hợp lệ. Vui lòng sử dụng định dạng YYYY-MM (ví dụ: 2025-11)';
+
+/** Exposes protected monthly expense reporting endpoints. */
 @ApiTags('expenses')
 @ApiBearerAuth('JWT-auth')
 @UseGuards(JwtAuthGuard)
@@ -40,6 +45,33 @@ export class ExpensesController {
   async getExpenseSummary(@Req() request: AuthenticatedRequest) {
     const data = await this.expensesService.getExpenseSummary(
       request.user.userId,
+    );
+
+    return { data };
+  }
+
+  /** Returns the selected month's expense breakdown by category. */
+  @Get('breakdown')
+  @ApiOperation({ summary: 'Get expense breakdown by category' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Breakdown retrieved' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid month' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'No expense data' })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Breakdown calculation failed',
+  })
+  async getExpensesBreakdown(
+    @Req() request: AuthenticatedRequest,
+    @Query('month') month?: string,
+  ) {
+    if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+      throw new BadRequestException(INVALID_MONTH_MESSAGE);
+    }
+
+    const data = await this.expensesService.getExpensesBreakdown(
+      request.user.userId,
+      month,
     );
 
     return { data };
