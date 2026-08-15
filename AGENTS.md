@@ -167,6 +167,112 @@ src/
 
 * Separate UI and logic if the component is complex.
 
+## 2. Figma UI Implementation Rules
+
+These rules apply whenever an active task requires creating or updating
+frontend UI from a supplied Figma design, file, page, frame, node, URL, or
+selection ID.
+
+### 2.1. Scope
+
+* The target Figma frame or frames identified for the active task and their
+  relevant nested nodes are the authoritative design scope.
+* Implement only the identified target frames. Do not implement, modify, or
+  infer other screens, flows, frames, or use cases.
+* Shared design-system components may be inspected and reused only when they
+  are directly used by an identified target frame.
+* Render every visual element shown in each identified target frame, even if
+  it belongs to another use case. Reproduce its appearance and shown state
+  only; do not implement its missing functionality.
+* Implement only the frontend behavior, data integration, and business logic
+  required for the active use case supplied by the task.
+* Do not create or modify backend functionality unless explicitly required by
+  the active use case.
+
+### 2.2. Design Inspection — Required Before Coding
+
+Before making code changes:
+
+1. Inspect every identified target Figma frame and its relevant nested nodes
+   through Figma MCP.
+
+2. Inspect the design properties required for accurate implementation,
+   including:
+
+   * Layout, hierarchy, dimensions, spacing, padding, and alignment
+   * Auto Layout, sizing, constraints, and responsive behavior
+   * Typography, colors, borders, radii, shadows, and effects
+   * Components, variants, icons, imagery, and relevant design tokens
+   * Interaction or visual states explicitly shown in the design
+
+3. Treat the inspected Figma nodes as the source of truth for the UI.
+
+4. Do not begin implementation until the target design is sufficiently
+   understood.
+
+### 2.3. Existing Implementation Review
+
+If the target UI already exists:
+
+1. Inspect the current implementation before editing.
+
+2. Compare it with the relevant nodes of every identified target Figma frame.
+
+3. Identify discrepancies in structure, layout, styling, components, states,
+   and responsive behavior.
+
+4. Change only what is necessary to match the identified target Figma frames.
+
+5. Preserve existing correct functionality and UI behavior.
+
+### 2.4. Implementation Requirements
+
+* Follow the identified target Figma frames as faithfully as technically
+  possible.
+* Preserve the exact visual hierarchy and element order shown in the
+  identified target frames.
+* Do not approximate, simplify, reinterpret, or redesign details explicitly
+  specified by the identified target frames.
+* Do not replace provided icons, logos, illustrations, or imagery with
+  arbitrary alternatives.
+* Reuse existing project components, styling systems, utilities, design
+  tokens, and implementation patterns whenever applicable.
+* Follow the existing project architecture, routing, and coding conventions.
+* Project conventions must not override visual details explicitly specified by
+  the identified target frames.
+* For behavior not specified by Figma, follow existing project conventions.
+* Preserve unrelated functionality and do not modify unrelated files.
+* Make only the changes necessary for the active use case.
+* Do not add functionality that is not required by the active use case.
+* Do not add UI that is not shown in the identified target frames unless it is
+  explicitly required by the active use case or its business rules.
+* Use existing project data, props, types, services, and API integrations when
+  available instead of hardcoded mock values.
+
+### 2.5. Validation — Required After Implementation
+
+After coding:
+
+1. Re-inspect every identified target Figma frame and its relevant nested nodes
+   through Figma MCP.
+
+2. Compare the implementation against the same identified Figma targets used
+   before coding.
+
+3. Verify visible elements, layout, dimensions, spacing, typography, colors,
+   components, states, and responsive behavior.
+
+4. Fix all known discrepancies within the identified target scope.
+
+5. Verify that existing correct functionality remains unchanged.
+
+6. Run the relevant build or validation checks permitted by the active task.
+
+7. Do not claim the implementation matches Figma exactly if a known
+   discrepancy remains. Document any unavoidable discrepancy and its
+   technical reason.
+
+
 ---
 
 # BACKEND
