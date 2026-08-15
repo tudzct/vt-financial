@@ -1,26 +1,26 @@
-import React, { ReactNode } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { useTheme } from '../../context/ThemeContext'
-import NavigationBar from '../NavigationBar/NavigationBar'
+import React, { ReactNode } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import NavigationBar from "../NavigationBar/NavigationBar";
 
 interface LayoutProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, isAuthenticated, logout } = useAuth()
-  const { theme, toggleTheme } = useTheme()
-  const navigate = useNavigate()
-  const location = useLocation()
+  const { user, isAuthenticated, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
+    logout();
+    navigate("/login");
+  };
 
-  if (location.pathname === '/register') {
-    return <>{children}</>
+  if (location.pathname === "/login" || location.pathname === "/register") {
+    return <>{children}</>;
   }
 
   return (
@@ -30,7 +30,10 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <Link to="/" className="text-xl font-bold text-blue-600 dark:text-blue-400">
+              <Link
+                to="/"
+                className="text-xl font-bold text-blue-600 dark:text-blue-400"
+              >
                 Financial App
               </Link>
             </div>
@@ -79,7 +82,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                 aria-label="Toggle theme"
               >
-                {theme === 'light' ? '🌙' : '☀️'}
+                {theme === "light" ? "🌙" : "☀️"}
               </button>
             </nav>
           </div>
@@ -100,7 +103,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </footer>
     </div>
-  )
-}
+  );
+};
 
-export default Layout
+export default Layout;

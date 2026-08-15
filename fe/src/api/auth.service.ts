@@ -1,51 +1,60 @@
-import axiosInstance from './axiosInstance'
-import { ApiResponse, User } from './types'
+import axiosInstance from "./axiosInstance";
+import { ApiResponse, User } from "./types";
 
 export interface LoginRequest {
-  username: string
-  password: string
+  email: string;
+  password: string;
 }
 
 export interface RegisterRequest {
-  fullName: string
-  email: string
-  password: string
-  confirmPassword: string
+  fullName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
 }
 
 export interface RegisteredUser {
-  id: number
-  fullName: string
-  email: string
+  id: number;
+  fullName: string;
+  email: string;
 }
 
 export interface RegisterResponseData {
-  accessToken: string
-  user: RegisteredUser
+  accessToken: string;
+  user: RegisteredUser;
+}
+
+export interface LoginResponseData {
+  accessToken: string;
+  user: RegisteredUser;
 }
 
 export const authService = {
   // Đăng nhập
-  login: async (data: LoginRequest): Promise<ApiResponse<{ user: User; token: string }>> => {
-    const response = await axiosInstance.post('/auth/login', data)
-    return response.data
+  login: async (
+    data: LoginRequest,
+  ): Promise<ApiResponse<LoginResponseData>> => {
+    const response = await axiosInstance.post("/auth/login", data);
+    return response.data;
   },
 
   // Đăng ký
-  register: async (data: RegisterRequest): Promise<ApiResponse<RegisterResponseData>> => {
-    const response = await axiosInstance.post('/auth/register', data)
-    return response.data
+  register: async (
+    data: RegisterRequest,
+  ): Promise<ApiResponse<RegisterResponseData>> => {
+    const response = await axiosInstance.post("/auth/register", data);
+    return response.data;
   },
 
   // Đăng xuất
   logout: (): void => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
   },
 
   // Lấy thông tin user hiện tại
   getCurrentUser: async (): Promise<ApiResponse<User>> => {
-    const response = await axiosInstance.get('/auth/me')
-    return response.data
+    const response = await axiosInstance.get("/auth/me");
+    return response.data;
   },
-}
+};

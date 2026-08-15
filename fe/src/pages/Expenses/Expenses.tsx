@@ -1,13 +1,12 @@
 import React from 'react'
+import ExpenseSummaryChart from '../../components/ExpenseSummaryChart/ExpenseSummaryChart'
 
 const Expenses: React.FC = () => {
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Chi tiêu</h1>
-      <p className="text-gray-600 dark:text-gray-400">Trang quản lý chi tiêu sẽ được phát triển sau.</p>
+    <div className="max-w-[728px]">
+      <ExpenseSummaryChart />
     </div>
   )
 }
 
 export default Expenses
-

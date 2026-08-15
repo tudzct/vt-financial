@@ -3,6 +3,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
@@ -10,6 +11,7 @@ import { randomUUID } from 'crypto';
 import { JwtService } from '@nestjs/jwt';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '../user/user.entity';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
 interface RegisteredUser {
@@ -19,6 +21,15 @@ interface RegisteredUser {
 }
 
 export interface RegisterResponse {
+  success: true;
+  message: string;
+  data: {
+    accessToken: string;
+    user: RegisteredUser;
+  };
+}
+
+export interface LoginResponse {
   success: true;
   message: string;
   data: {
@@ -37,6 +48,46 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  /** Applies BR-LOG-01 through BR-LOG-06 to authenticate an existing user. */
+  async login(loginDto: LoginDto): Promise<LoginResponse> {
+    const email = this.normalizeEmail(loginDto.email);
+    this.assertLoginInput({ ...loginDto, email });
+
+    try {
+      const user = await this.userRepository
+        .createQueryBuilder('user')
+        .where('LOWER(TRIM(user.email)) = :email', { email })
+        .getOne();
+
+      if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
+        throw new UnauthorizedException('Email hoặc mật khẩu không đúng.');
+      }
+
+      const accessToken = await this.jwtService.signAsync({
+        sub: user.userId,
+        email: user.email,
+      });
+
+      return {
+        success: true,
+        message: 'Đăng nhập thành công',
+        data: {
+          accessToken,
+          user: this.toRegisteredUser(user),
+        },
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Internal Server Error');
+    }
+  }
+
   /** Creates a normalized user, hashes its password, and signs a JWT atomically. */
   async register(registerDto: RegisterDto): Promise<RegisterResponse> {
     const fullName = this.normalizeName(registerDto.fullName);
@@ -52,7 +103,9 @@ export class AuthService {
           .getOne();
 
         if (existingUser) {
-          throw new ConflictException('Conflict / This email is already registered.');
+          throw new ConflictException(
+            'Conflict / This email is already registered.',
+          );
         }
 
         const passwordHash = await bcrypt.hash(registerDto.password, 10);
@@ -79,12 +132,20 @@ export class AuthService {
         };
       });
     } catch (error) {
-      if (error instanceof BadRequestException || error instanceof ConflictException) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException
+      ) {
         throw error;
       }
 
-      if (this.isUniqueConstraintError(error) && (await this.emailExists(email))) {
-        throw new ConflictException('Conflict / This email is already registered.');
+      if (
+        this.isUniqueConstraintError(error) &&
+        (await this.emailExists(email))
+      ) {
+        throw new ConflictException(
+          'Conflict / This email is already registered.',
+        );
       }
 
       throw new InternalServerErrorException('Internal Server Error');
@@ -121,6 +182,22 @@ export class AuthService {
 
     if (typeof confirmPassword !== 'string' || confirmPassword !== password) {
       throw new BadRequestException('Bad Request / Passwords do not match.');
+    }
+  }
+
+  /** Checks BR-LOG-01 and BR-LOG-02 before performing a user lookup. */
+  private assertLoginInput(loginDto: LoginDto): void {
+    const { email, password } = loginDto;
+    const hasValidEmail =
+      typeof email === 'string' &&
+      email.length > 0 &&
+      email.length <= 255 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    const hasValidPassword =
+      typeof password === 'string' && password.length > 0;
+
+    if (!hasValidEmail || !hasValidPassword) {
+      throw new BadRequestException('Bad Request / Input validation failed.');
     }
   }
 
@@ -162,7 +239,11 @@ export class AuthService {
 
   /** Identifies database duplicate-key failures without exposing driver details. */
   private isUniqueConstraintError(error: unknown): boolean {
-    const databaseError = error as { code?: string; errno?: number } | undefined;
-    return databaseError?.code === 'ER_DUP_ENTRY' || databaseError?.errno === 1062;
+    const databaseError = error as
+      | { code?: string; errno?: number }
+      | undefined;
+    return (
+      databaseError?.code === 'ER_DUP_ENTRY' || databaseError?.errno === 1062
+    );
   }
 }

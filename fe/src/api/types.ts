@@ -6,6 +6,11 @@ export interface ApiResponse<T = any> {
   data?: T
 }
 
+export interface ExpenseSummaryItem {
+  month: string
+  totalExpense: number
+}
+
 export interface User {
   user_id: number
   full_name: string
@@ -67,4 +72,3 @@ export interface Goal {
   target_achieved: boolean
   last_updated: string
 }
-
