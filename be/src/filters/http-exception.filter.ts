@@ -10,7 +10,6 @@ import { Request } from 'express';
 
 interface HttpErrorPayload {
   message?: string | string[];
-  error?: string;
 }
 
 /** Converts all thrown errors to the application's standard JSON envelope. */
@@ -21,7 +20,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const request = host.switchToHttp().getRequest<Request>();
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | string[] = 'Internal Server Error';
-    let errorName: string | undefined;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -39,18 +37,16 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         ) {
           message = message[0];
         }
-        errorName = payload.error;
       }
     } else {
       // Log unhandled exceptions (Internal Server Errors) to the console
       console.error('Unhandled Exception:', exception);
     }
 
-    const body: {
-      success: false;
-      message: string | string[];
-      error?: string;
-    } = { success: false, message };
+    const body: { success: false; message: string | string[] } = {
+      success: false,
+      message,
+    };
 
     if (
       status === HttpStatus.BAD_REQUEST &&
@@ -58,10 +54,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       request.path === '/api/v1/transactions'
     ) {
       body.message = 'Invalid or missing transaction data';
-    }
-
-    if (status === HttpStatus.BAD_REQUEST && errorName) {
-      body.error = errorName;
     }
 
     response.status(status).json(body);
