@@ -111,6 +111,24 @@ export interface CreateTransactionResponse {
   data: CreatedTransaction;
 }
 
+/** Normalized bill returned by GET /api/v1/bills. */
+export interface BillDto {
+  billId: number;
+  userId: number;
+  dueDate: string;
+  logoUrl: string | null;
+  itemDescription: string;
+  lastChargeDate: string | null;
+  amount: number;
+}
+
+export interface BillListResponse {
+  success: boolean;
+  message: string;
+  data: BillDto[];
+}
+
+/** Legacy bill shape used by the existing non-list bill client methods. */
 export interface Bill {
   bill_id: number;
   user_id: number;

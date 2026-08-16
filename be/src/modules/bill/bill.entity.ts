@@ -4,8 +4,6 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 
@@ -25,13 +23,13 @@ export class Bill {
   dueDate: Date;
 
   @Column({ name: 'logo_url', type: 'varchar', length: 500, nullable: true })
-  logoUrl: string;
+  logoUrl: string | null;
 
   @Column({ name: 'item_description', type: 'varchar', length: 500 })
   itemDescription: string;
 
   @Column({ name: 'last_charge_date', type: 'date', nullable: true })
-  lastChargeDate: Date;
+  lastChargeDate: Date | null;
 
   @Column({
     name: 'amount',
@@ -40,11 +38,4 @@ export class Bill {
     scale: 2,
   })
   amount: number;
-
-  // @CreateDateColumn({ name: 'created_at', type: 'timestamp', nullable: true })
-  // createdAt: Date;
-
-  // @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
-  // updatedAt: Date;
 }
-
