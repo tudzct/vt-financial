@@ -28,7 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login')
   }
 
-  if (location.pathname === '/bills') {
+  if (location.pathname === '/bills' || location.pathname === '/goals') {
     const profileName = user?.full_name || user?.username || 'User'
     const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'U'
 

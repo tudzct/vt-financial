@@ -150,3 +150,32 @@ export interface Goal {
   target_achieved: boolean;
   last_updated: string;
 }
+
+/** Saving goal returned by GET /api/v1/goals. */
+export interface SavingGoal {
+  goal_id: number;
+  goal_type: 'Saving';
+  target_amount: number;
+  target_achieved: number;
+  start_date: string;
+  end_date: string;
+}
+
+/** Active expense-limit goal returned by GET /api/v1/goals. */
+export interface ExpenseGoal {
+  goal_id: number;
+  category: string;
+  target_amount: number;
+  current_expense: number;
+}
+
+export interface GoalListData {
+  savingGoal: SavingGoal | null;
+  expenseGoals: ExpenseGoal[];
+}
+
+export interface GoalListResponse {
+  success: boolean;
+  message: string;
+  data: GoalListData;
+}
