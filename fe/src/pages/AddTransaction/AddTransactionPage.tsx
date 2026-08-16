@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext'
 
 const NAVIGATION_ITEMS = [
   { path: '/dashboard', label: 'Overview', icon: '◫' },
-  { path: '/account', label: 'Balances', icon: '▣' },
+  { path: '/accounts', label: 'Balances', icon: '▣' },
   { path: '/transactions', label: 'Transactions', icon: '↔' },
   { path: '/bills', label: 'Bills', icon: '▧' },
   { path: '/expenses', label: 'Expenses', icon: '▤' },

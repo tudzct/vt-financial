@@ -16,25 +16,37 @@ export class AccountService {
   async findAllByUserId(userId: number): Promise<AccountListResponseDto> {
     try {
       const accounts = await this.accountRepository.find({
+        select: {
+          accountId: true,
+          bankName: true,
+          accountType: true,
+          branchName: true,
+          accountNumberLast4: true,
+          balance: true,
+        },
         where: { userId },
         order: { accountId: 'ASC' },
       });
 
       return {
         success: true,
-        message: 'Accounts fetched successfully',
-        data: accounts.map((account) => ({
-          account_id: account.accountId,
-          user_id: account.userId,
-          bank_name: account.bankName,
-          account_type: account.accountType,
-          branch_name: account.branchName ?? null,
-          account_number_last_4: account.accountNumberLast4,
-          balance: Number(account.balance),
-        })),
+        message: 'Lấy danh sách tài khoản thành công',
+        data: {
+          user_id: userId,
+          accounts: accounts.map((account) => ({
+            id: account.accountId,
+            bank_name: account.bankName,
+            account_type: account.accountType,
+            branch_name: account.branchName ?? null,
+            account_number_last_4: account.accountNumberLast4,
+            balance: Number(account.balance),
+          })),
+        },
       };
     } catch {
-      throw new InternalServerErrorException('Unable to fetch accounts');
+      throw new InternalServerErrorException(
+        'Đã xảy ra lỗi hệ thống, vui lòng thử lại sau.',
+      );
     }
   }
 }

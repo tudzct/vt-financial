@@ -2,8 +2,7 @@ import { AccountType } from '../account.entity';
 
 /** Public account fields returned by the owned-account lookup. */
 export interface AccountListItemDto {
-  account_id: number;
-  user_id: number;
+  id: number;
   bank_name: string;
   account_type: AccountType;
   branch_name: string | null;
@@ -15,5 +14,8 @@ export interface AccountListItemDto {
 export interface AccountListResponseDto {
   success: true;
   message: string;
-  data: AccountListItemDto[];
+  data: {
+    user_id: number;
+    accounts: AccountListItemDto[];
+  };
 }

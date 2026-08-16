@@ -28,6 +28,30 @@ export interface Account {
   balance: number;
 }
 
+export type AccountType = "Checking" | "Credit Card" | "Savings" | "Investment" | "Loan";
+
+/** Public account fields returned by GET /api/v1/accounts. */
+export interface AccountListItem {
+  id: number;
+  bank_name: string;
+  account_type: AccountType;
+  branch_name: string | null;
+  account_number_last_4: string;
+  balance: number;
+}
+
+/** Authenticated owner and their ordered account list. */
+export interface AccountListData {
+  user_id: number;
+  accounts: AccountListItem[];
+}
+
+export interface AccountListResponse {
+  success: boolean;
+  message: string;
+  data: AccountListData;
+}
+
 export interface Category {
   category_id: number;
   category_name: string;

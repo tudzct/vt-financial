@@ -27,7 +27,7 @@ const GENERAL_ERROR_MESSAGE = 'Unable to load expense data.'
 
 const navItems = [
   ['Overview', '/dashboard', '▦'],
-  ['Balances', '/account', '▣'],
+  ['Balances', '/accounts', '▣'],
   ['Transactions', '/transactions', '⇄'],
   ['Bills', '/bills', '▤'],
   ['Expenses', '/expenses', '▧'],
