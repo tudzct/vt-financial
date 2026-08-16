@@ -1,10 +1,10 @@
 import axiosInstance from './axiosInstance'
-import { ApiResponse, Goal } from './types'
+import { ApiResponse, Goal, GoalListResponse } from './types'
 
 export const goalService = {
   // Lấy danh sách mục tiêu của user
-  getGoals: async (): Promise<ApiResponse<Goal[]>> => {
-    const response = await axiosInstance.get('/goals')
+  getGoals: async (): Promise<GoalListResponse> => {
+    const response = await axiosInstance.get<GoalListResponse>('/v1/goals')
     return response.data
   },
 
@@ -32,4 +32,3 @@ export const goalService = {
     return response.data
   },
 }
-
