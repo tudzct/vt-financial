@@ -1,10 +1,12 @@
 import axiosInstance from './axiosInstance'
-import { ApiResponse, Bill } from './types'
+import { ApiResponse, Bill, BillListResponse } from './types'
 
 export const billService = {
-  // Lấy danh sách hóa đơn của user
-  getBills: async (): Promise<ApiResponse<Bill[]>> => {
-    const response = await axiosInstance.get('/bills')
+  /** Retrieves upcoming bills using the interceptor-managed Bearer token. */
+  getBills: async (signal?: AbortSignal): Promise<BillListResponse> => {
+    const response = await axiosInstance.get<BillListResponse>('/v1/bills', {
+      signal,
+    })
     return response.data
   },
 
@@ -32,4 +34,3 @@ export const billService = {
     return response.data
   },
 }
-
