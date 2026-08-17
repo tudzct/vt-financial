@@ -18,13 +18,22 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Cấu hình CORS
-  const allowedOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',')
-    : [
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://localhost:5173',
-      ];
+  const configuredOrigins = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  const localDevelopmentOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3001',
+    'http://localhost:3002',
+    'http://localhost:5173',
+  ];
+  const allowedOrigins = new Set([
+    ...configuredOrigins,
+    ...(process.env.NODE_ENV === 'production'
+      ? []
+      : localDevelopmentOrigins),
+  ]);
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -33,7 +42,7 @@ async function bootstrap() {
         return callback(null, true);
       }
       // Kiểm tra origin có trong danh sách allowed
-      if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+      if (allowedOrigins.has(origin)) {
         callback(null, true);
       } else {
         callback(new Error('Not allowed by CORS'));

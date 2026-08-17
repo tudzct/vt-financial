@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  OnModuleInit,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Category } from './category.entity';
@@ -6,11 +10,31 @@ import { CategoryListResponseDto } from './dto/category-list.dto';
 
 /** Provides public category lookup business logic. */
 @Injectable()
-export class CategoryService {
+export class CategoryService implements OnModuleInit {
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
   ) {}
+
+  /** Idempotently supplies the categories required by goal and expense forms. */
+  async onModuleInit(): Promise<void> {
+    const defaultCategories = [
+      'Housing',
+      'Food',
+      'Transportation',
+      'Entertainment',
+      'Shopping',
+      'Others',
+    ];
+
+    await this.categoryRepository
+      .createQueryBuilder()
+      .insert()
+      .into(Category)
+      .values(defaultCategories.map((categoryName) => ({ categoryName })))
+      .orIgnore()
+      .execute();
+  }
 
   /** Returns all categories ordered by name. */
   async findAll(): Promise<CategoryListResponseDto> {

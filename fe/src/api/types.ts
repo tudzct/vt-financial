@@ -197,3 +197,21 @@ export interface CreatedGoalData {
 }
 
 export type CreateGoalResponse = ApiResponse<CreatedGoalData>;
+
+/** Target-only payload accepted by PUT /api/v1/goals/:goalId. */
+export interface UpdateGoalPayload {
+  target_amount: number;
+}
+
+export interface UpdatedGoalData {
+  goal_id: number;
+  target_amount: number;
+}
+
+export interface UpdateGoalResponse {
+  success: true;
+  message: 'Goal updated successfully';
+  data: {
+    updated_goal: UpdatedGoalData;
+  };
+}

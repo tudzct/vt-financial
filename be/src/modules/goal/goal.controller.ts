@@ -4,7 +4,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +20,7 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { CreateGoalDto } from './dto/create-goal.dto';
+import { UpdateGoalDto } from './dto/update-goal.dto';
 import { GoalService } from './goal.service';
 
 interface AuthenticatedRequest extends Request {
@@ -75,6 +78,38 @@ export class GoalController {
       success: true,
       message: 'Lấy danh sách mục tiêu thành công',
       data,
+    };
+  }
+
+  /** Updates only the target amount of an owned financial goal. */
+  @Put(':goalId')
+  @ApiOperation({ summary: 'Update an owned financial goal' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Goal updated' })
+  @ApiResponse({ status: HttpStatus.BAD_REQUEST, description: 'Invalid target amount' })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
+  @ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Not the goal owner' })
+  @ApiResponse({ status: HttpStatus.NOT_FOUND, description: 'Goal not found' })
+  @ApiResponse({ status: HttpStatus.INTERNAL_SERVER_ERROR, description: 'Update failed' })
+  async updateGoal(
+    @Req() request: AuthenticatedRequest,
+    @Param('goalId') goalId: string,
+    @Body() dto: UpdateGoalDto,
+  ) {
+    const updatedGoal = await this.goalService.updateGoal(
+      request.user.userId,
+      parseInt(goalId, 10),
+      dto,
+    );
+
+    return {
+      success: true,
+      message: 'Goal updated successfully',
+      data: {
+        updated_goal: {
+          goal_id: updatedGoal.goalId,
+          target_amount: Number(updatedGoal.targetAmount),
+        },
+      },
     };
   }
 }

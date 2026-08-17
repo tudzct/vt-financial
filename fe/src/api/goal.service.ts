@@ -5,6 +5,8 @@ import {
   CreateGoalResponse,
   Goal,
   GoalListResponse,
+  UpdateGoalPayload,
+  UpdateGoalResponse,
 } from './types'
 
 export const goalService = {
@@ -27,8 +29,11 @@ export const goalService = {
   },
 
   // Cập nhật mục tiêu
-  updateGoal: async (goalId: number, data: Partial<Goal>): Promise<ApiResponse<Goal>> => {
-    const response = await axiosInstance.put(`/goals/${goalId}`, data)
+  updateGoal: async (
+    goalId: number,
+    data: UpdateGoalPayload
+  ): Promise<UpdateGoalResponse> => {
+    const response = await axiosInstance.put<UpdateGoalResponse>(`/v1/goals/${goalId}`, data)
     return response.data
   },
 

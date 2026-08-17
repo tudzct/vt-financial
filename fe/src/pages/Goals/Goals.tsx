@@ -1,7 +1,8 @@
 import axios from 'axios'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { goalService } from '../../api/goal.service'
-import { ExpenseGoal, GoalListData, SavingGoal } from '../../api/types'
+import { ExpenseGoal, GoalListData, SavingGoal, UpdatedGoalData } from '../../api/types'
+import AdjustGoalModal from '../../components/AdjustGoalModal/AdjustGoalModal'
 import CreateGoalModal from '../../components/CreateGoalModal/CreateGoalModal'
 import ErrorComponent from '../../components/Error/Error'
 import Loading from '../../components/Loading/Loading'
@@ -33,7 +34,10 @@ const getProgress = (current: number, target: number): number => {
 }
 
 /** Displays the saving goal values and target progress. */
-const SavingsGoalCard: React.FC<{ goal: SavingGoal }> = ({ goal }) => {
+const SavingsGoalCard: React.FC<{
+  goal: SavingGoal
+  onAdjust: (goal: SavingGoal) => void
+}> = ({ goal, onAdjust }) => {
   const progress = getProgress(goal.target_achieved, goal.target_amount)
   const startDate = formatDate(goal.start_date, { month: 'short', day: '2-digit' })
   const endDate = formatDate(goal.end_date, { month: 'short', day: '2-digit' })
@@ -85,6 +89,7 @@ const SavingsGoalCard: React.FC<{ goal: SavingGoal }> = ({ goal }) => {
       <div className="mt-4 flex justify-center">
         <button
           type="button"
+          onClick={() => onAdjust(goal)}
           className="rounded border border-[#2fa69b] px-5 py-2 text-xs font-medium text-[#269b91] transition hover:bg-[#edf9f8]"
         >
           Adjust Goal&nbsp;&nbsp;⌕
@@ -166,7 +171,10 @@ const SavingSummaryCard: React.FC<{ goal: SavingGoal }> = ({ goal }) => {
 }
 
 /** Displays current category spending against its active expense limit. */
-const ExpenseGoalCard: React.FC<{ goal: ExpenseGoal }> = ({ goal }) => {
+const ExpenseGoalCard: React.FC<{
+  goal: ExpenseGoal
+  onAdjust: (goal: ExpenseGoal) => void
+}> = ({ goal, onAdjust }) => {
   const progress = getProgress(goal.current_expense, goal.target_amount)
 
   return (
@@ -186,6 +194,7 @@ const ExpenseGoalCard: React.FC<{ goal: ExpenseGoal }> = ({ goal }) => {
         </div>
         <button
           type="button"
+          onClick={() => onAdjust(goal)}
           className="rounded border border-[#2fa69b] px-4 py-2 text-xs font-medium text-[#269b91] transition hover:bg-[#edf9f8]"
         >
           Adjust&nbsp;&nbsp;⌕
@@ -207,6 +216,8 @@ const Goals: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [isAdjustModalOpen, setIsAdjustModalOpen] = useState(false)
+  const [selectedGoal, setSelectedGoal] = useState<SavingGoal | ExpenseGoal | null>(null)
   const [successToast, setSuccessToast] = useState('')
   const requestInFlight = useRef(false)
 
@@ -257,6 +268,31 @@ const Goals: React.FC = () => {
     await fetchGoals()
   }, [fetchGoals])
 
+  /** Opens UC-15 for the selected saving or expense-limit goal. */
+  const openAdjustment = useCallback((goal: SavingGoal | ExpenseGoal) => {
+    setSelectedGoal(goal)
+    setIsAdjustModalOpen(true)
+  }, [])
+
+  /** Applies the successful update locally, then refreshes canonical progress data. */
+  const handleGoalUpdated = useCallback(async (updatedGoal: UpdatedGoalData) => {
+    setGoalData((current) => ({
+      savingGoal:
+        current.savingGoal?.goal_id === updatedGoal.goal_id
+          ? { ...current.savingGoal, target_amount: updatedGoal.target_amount }
+          : current.savingGoal,
+      expenseGoals: current.expenseGoals.map((goal) =>
+        goal.goal_id === updatedGoal.goal_id
+          ? { ...goal, target_amount: updatedGoal.target_amount }
+          : goal
+      ),
+    }))
+    setSuccessToast('Goal updated successfully')
+    setIsAdjustModalOpen(false)
+    setSelectedGoal(null)
+    await fetchGoals()
+  }, [fetchGoals])
+
   const hasNoGoals = !goalData.savingGoal && goalData.expenseGoals.length === 0
 
   return (
@@ -299,7 +335,7 @@ const Goals: React.FC = () => {
         <>
           {goalData.savingGoal && (
             <div className="grid grid-cols-[368px_minmax(0,1fr)] gap-6">
-              <SavingsGoalCard goal={goalData.savingGoal} />
+              <SavingsGoalCard goal={goalData.savingGoal} onAdjust={openAdjustment} />
               <SavingSummaryCard goal={goalData.savingGoal} />
             </div>
           )}
@@ -311,7 +347,7 @@ const Goals: React.FC = () => {
               </h2>
               <div className="grid grid-cols-3 gap-x-6 gap-y-4">
                 {goalData.expenseGoals.map((goal) => (
-                  <ExpenseGoalCard key={goal.goal_id} goal={goal} />
+                  <ExpenseGoalCard key={goal.goal_id} goal={goal} onAdjust={openAdjustment} />
                 ))}
               </div>
             </section>
@@ -323,6 +359,16 @@ const Goals: React.FC = () => {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreated={handleGoalCreated}
+      />
+
+      <AdjustGoalModal
+        isOpen={isAdjustModalOpen}
+        goal={selectedGoal}
+        onClose={() => {
+          setIsAdjustModalOpen(false)
+          setSelectedGoal(null)
+        }}
+        onUpdated={handleGoalUpdated}
       />
 
       {successToast && (

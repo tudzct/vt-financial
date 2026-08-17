@@ -19,8 +19,6 @@ export interface RegisterRequest {
   confirmPassword: string
 }
 
-export type RegisterData = { accessToken: string; user: LoginUser }
-
 export interface RegisterResponse {
   success: boolean
   message: string | string[]

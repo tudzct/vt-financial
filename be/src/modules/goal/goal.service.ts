@@ -1,7 +1,10 @@
 import {
   BadRequestException,
+  ForbiddenException,
+  HttpException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
@@ -13,6 +16,7 @@ import {
 } from '../transaction/transaction.entity';
 import { GoalListDataDto } from './dto/goal-list.dto';
 import { CreateGoalDto } from './dto/create-goal.dto';
+import { UpdateGoalDto } from './dto/update-goal.dto';
 import { Goal, GoalType } from './goal.entity';
 
 const GOAL_RETRIEVAL_ERROR_MESSAGE =
@@ -20,6 +24,8 @@ const GOAL_RETRIEVAL_ERROR_MESSAGE =
 const GOAL_CREATION_ERROR_MESSAGE =
   'Không thể tạo mục tiêu lúc này. Vui lòng thử lại sau.';
 const APPLICATION_TIME_ZONE = 'Asia/Ho_Chi_Minh';
+const GOAL_UPDATE_ERROR_MESSAGE =
+  'Unable to save changes at this time. Please try again later.';
 
 interface ProgressRow {
   type: TransactionType;
@@ -241,6 +247,54 @@ export class GoalService {
       }
 
       throw new InternalServerErrorException(GOAL_RETRIEVAL_ERROR_MESSAGE);
+    }
+  }
+
+  /** Implements UC-15 with an ownership check and a locked target-only update. */
+  async updateGoal(
+    userId: number,
+    goalId: number,
+    dto: UpdateGoalDto,
+  ): Promise<Goal> {
+    const targetAmount = this.normalizeMoney(dto.target_amount);
+
+    if (targetAmount <= 0) {
+      throw new BadRequestException(
+        'target_amount must be a positive number',
+      );
+    }
+
+    try {
+      return await this.dataSource.transaction(
+        'READ COMMITTED',
+        async (manager) => {
+          const goalRepository = manager.getRepository(Goal);
+          const goal = await goalRepository
+            .createQueryBuilder('goal')
+            .setLock('pessimistic_write')
+            .where('goal.goalId = :goalId', { goalId })
+            .getOne();
+
+          if (!goal) {
+            throw new NotFoundException('Goal does not exist.');
+          }
+
+          if (goal.userId !== userId) {
+            throw new ForbiddenException(
+              'You do not have permission to edit this goal.',
+            );
+          }
+
+          goal.targetAmount = targetAmount;
+          return goalRepository.save(goal);
+        },
+      );
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(GOAL_UPDATE_ERROR_MESSAGE);
     }
   }
 
