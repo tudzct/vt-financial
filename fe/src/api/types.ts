@@ -179,3 +179,21 @@ export interface GoalListResponse {
   message: string;
   data: GoalListData;
 }
+
+export type GoalType = 'Saving' | 'Expense_Limit';
+
+/** Payload accepted by POST /api/v1/goals. */
+export interface CreateGoalPayload {
+  goal_type: GoalType;
+  category_id: number | null;
+  start_date: string;
+  end_date: string;
+  target_amount: number;
+}
+
+/** Identifier returned after a goal is persisted. */
+export interface CreatedGoalData {
+  goal_id: number;
+}
+
+export type CreateGoalResponse = ApiResponse<CreatedGoalData>;

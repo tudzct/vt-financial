@@ -1,5 +1,11 @@
 import axiosInstance from './axiosInstance'
-import { ApiResponse, Goal, GoalListResponse } from './types'
+import {
+  ApiResponse,
+  CreateGoalPayload,
+  CreateGoalResponse,
+  Goal,
+  GoalListResponse,
+} from './types'
 
 export const goalService = {
   // Lấy danh sách mục tiêu của user
@@ -14,9 +20,9 @@ export const goalService = {
     return response.data
   },
 
-  // Tạo mục tiêu mới
-  createGoal: async (data: Omit<Goal, 'goal_id' | 'last_updated'>): Promise<ApiResponse<Goal>> => {
-    const response = await axiosInstance.post('/goals', data)
+  /** Creates one goal without automatically retrying the non-idempotent request. */
+  createGoal: async (data: CreateGoalPayload): Promise<CreateGoalResponse> => {
+    const response = await axiosInstance.post<CreateGoalResponse>('/v1/goals', data)
     return response.data
   },
 

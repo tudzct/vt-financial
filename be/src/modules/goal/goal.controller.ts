@@ -1,4 +1,13 @@
-import { Controller, Get, HttpStatus, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -8,6 +17,7 @@ import {
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
+import { CreateGoalDto } from './dto/create-goal.dto';
 import { GoalService } from './goal.service';
 
 interface AuthenticatedRequest extends Request {
@@ -21,6 +31,33 @@ interface AuthenticatedRequest extends Request {
 @Controller('v1/goals')
 export class GoalController {
   constructor(private readonly goalService: GoalService) {}
+
+  /** Creates a financial goal owned by the authenticated user. */
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a financial goal' })
+  @ApiResponse({ status: HttpStatus.CREATED, description: 'Goal created' })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid goal data',
+  })
+  @ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Unauthorized' })
+  @ApiResponse({
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
+    description: 'Goal persistence failed',
+  })
+  async createGoal(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: CreateGoalDto,
+  ) {
+    const goal = await this.goalService.createGoal(request.user.userId, dto);
+
+    return {
+      success: true,
+      message: 'Goal created successfully',
+      data: { goal_id: goal.goalId },
+    };
+  }
 
   /** Returns the authenticated user's active goals and calculated progress. */
   @Get()

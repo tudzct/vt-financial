@@ -4,8 +4,6 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { Category } from '../category/category.entity';
@@ -34,18 +32,18 @@ export class Goal {
   })
   goalType: GoalType;
 
-  @Column({ name: 'category_id', type: 'int' })
-  categoryId: number;
+  @Column({ name: 'category_id', type: 'int', nullable: true })
+  categoryId: number | null;
 
-  @ManyToOne(() => Category, (category) => category.goals)
+  @ManyToOne(() => Category, (category) => category.goals, { nullable: true })
   @JoinColumn({ name: 'category_id' })
-  category: Category;
+  category: Category | null;
 
   @Column({ name: 'start_date', type: 'date' })
-  startDate: Date;
+  startDate: string;
 
   @Column({ name: 'end_date', type: 'date' })
-  endDate: Date;
+  endDate: string;
 
   @Column({
     name: 'target_amount',
@@ -73,4 +71,3 @@ export class Goal {
   // @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
   // updatedAt: Date;
 }
-

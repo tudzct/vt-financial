@@ -2,6 +2,7 @@ import axios from 'axios'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { goalService } from '../../api/goal.service'
 import { ExpenseGoal, GoalListData, SavingGoal } from '../../api/types'
+import CreateGoalModal from '../../components/CreateGoalModal/CreateGoalModal'
 import ErrorComponent from '../../components/Error/Error'
 import Loading from '../../components/Loading/Loading'
 
@@ -205,6 +206,8 @@ const Goals: React.FC = () => {
   })
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const [successToast, setSuccessToast] = useState('')
   const requestInFlight = useRef(false)
 
   /** Fetches the idempotent goal list without changing authentication state. */
@@ -240,11 +243,34 @@ const Goals: React.FC = () => {
     void fetchGoals()
   }, [fetchGoals])
 
+  useEffect(() => {
+    if (!successToast) return
+
+    const timeoutId = window.setTimeout(() => setSuccessToast(''), 3500)
+    return () => window.clearTimeout(timeoutId)
+  }, [successToast])
+
+  /** Closes the modal, confirms success, and refreshes the goal collection. */
+  const handleGoalCreated = useCallback(async () => {
+    setSuccessToast('Goal created successfully')
+    setIsCreateModalOpen(false)
+    await fetchGoals()
+  }, [fetchGoals])
+
   const hasNoGoals = !goalData.savingGoal && goalData.expenseGoals.length === 0
 
   return (
     <div className="min-h-[calc(100vh-104px)] min-w-[1080px] text-[#333]">
-      <h1 className="mb-5 text-[22px] font-normal text-[#888]">Goals</h1>
+      <div className="mb-5 flex items-center justify-between">
+        <h1 className="text-[22px] font-normal text-[#888]">Goals</h1>
+        <button
+          type="button"
+          onClick={() => setIsCreateModalOpen(true)}
+          className="rounded bg-[#2fa69b] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#278f86]"
+        >
+          Create Goal
+        </button>
+      </div>
 
       {isLoading ? (
         <div className="flex min-h-[520px] items-center justify-center rounded-lg bg-white">
@@ -263,6 +289,7 @@ const Goals: React.FC = () => {
           </p>
           <button
             type="button"
+            onClick={() => setIsCreateModalOpen(true)}
             className="mt-6 rounded bg-[#2fa69b] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#278f86]"
           >
             Create Goal
@@ -290,6 +317,21 @@ const Goals: React.FC = () => {
             </section>
           )}
         </>
+      )}
+
+      <CreateGoalModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={handleGoalCreated}
+      />
+
+      {successToast && (
+        <div
+          role="status"
+          className="fixed right-6 top-6 z-[60] rounded-lg bg-[#2fa69b] px-5 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(35,123,116,0.28)]"
+        >
+          {successToast}
+        </div>
       )}
     </div>
   )
