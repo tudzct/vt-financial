@@ -1,19 +1,24 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Account } from '../account/account.entity';
+import { Category } from '../category/category.entity';
 import {
   Transaction,
   TransactionType,
 } from '../transaction/transaction.entity';
 import { GoalListDataDto } from './dto/goal-list.dto';
+import { CreateGoalDto } from './dto/create-goal.dto';
 import { Goal, GoalType } from './goal.entity';
 
 const GOAL_RETRIEVAL_ERROR_MESSAGE =
   'Đã xảy ra lỗi hệ thống khi tải mục tiêu, vui lòng thử lại sau.';
+const GOAL_CREATION_ERROR_MESSAGE =
+  'Không thể tạo mục tiêu lúc này. Vui lòng thử lại sau.';
 const APPLICATION_TIME_ZONE = 'Asia/Ho_Chi_Minh';
 
 interface ProgressRow {
@@ -22,10 +27,101 @@ interface ProgressRow {
   totalAmount: string;
 }
 
-/** Retrieves owned goals and calculates their current-month progress. */
+/** Creates owned goals and calculates their current-month progress. */
 @Injectable()
 export class GoalService {
   constructor(private readonly dataSource: DataSource) {}
+
+  /** Implements UC-14 and BR-GOAL-04 through BR-GOAL-11 atomically. */
+  async createGoal(userId: number, dto: CreateGoalDto): Promise<Goal> {
+    if (!Number.isInteger(userId) || userId <= 0) {
+      throw new UnauthorizedException('Unauthorized');
+    }
+
+    if (!Object.values(GoalType).includes(dto.goal_type)) {
+      throw new BadRequestException(
+        'goal_type must be either Saving or Expense_Limit',
+      );
+    }
+
+    if (
+      typeof dto.target_amount !== 'number' ||
+      !Number.isFinite(dto.target_amount) ||
+      dto.target_amount <= 0
+    ) {
+      throw new BadRequestException('target_amount must be greater than 0');
+    }
+
+    const startDate = this.parseCalendarDate(dto.start_date, 'start_date');
+    const endDate = this.parseCalendarDate(dto.end_date, 'end_date');
+
+    if (endDate.getTime() <= startDate.getTime()) {
+      throw new BadRequestException('end_date must be later than start_date');
+    }
+
+    const targetAmount = this.normalizeMoney(dto.target_amount);
+
+    if (targetAmount <= 0) {
+      throw new BadRequestException('target_amount must be greater than 0');
+    }
+
+    try {
+      return await this.dataSource.transaction(
+        'READ COMMITTED',
+        async (manager) => {
+          const goalRepository = manager.getRepository(Goal);
+          let categoryId: number | null = null;
+
+          if (dto.goal_type === GoalType.EXPENSE_LIMIT) {
+            if (
+              !Number.isInteger(dto.category_id) ||
+              Number(dto.category_id) <= 0
+            ) {
+              throw new BadRequestException(
+                'category_id is required for Expense_Limit goals',
+              );
+            }
+
+            const category = await manager.getRepository(Category).findOne({
+              select: { categoryId: true },
+              where: { categoryId: Number(dto.category_id) },
+            });
+
+            if (!category) {
+              throw new BadRequestException('Selected category does not exist');
+            }
+
+            categoryId = category.categoryId;
+          }
+
+          const goal = goalRepository.create({
+            userId,
+            goalType: dto.goal_type,
+            categoryId,
+            startDate: dto.start_date,
+            endDate: dto.end_date,
+            targetAmount,
+          });
+          const savedGoal = await goalRepository.save(goal);
+
+          if (!Number.isInteger(savedGoal.goalId) || savedGoal.goalId <= 0) {
+            throw new Error('Goal persistence did not return an identifier');
+          }
+
+          return savedGoal;
+        },
+      );
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof UnauthorizedException
+      ) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(GOAL_CREATION_ERROR_MESSAGE);
+    }
+  }
 
   /** Implements UC-13 and BR-GOAL-01 through BR-GOAL-03. */
   async getGoals(userId: number): Promise<GoalListDataDto> {
@@ -131,7 +227,9 @@ export class GoalService {
               category: goal.category?.categoryName ?? 'Unknown',
               target_amount: this.normalizeMoney(goal.targetAmount),
               current_expense: this.normalizeMoney(
-                expenseByCategory.get(goal.categoryId) ?? 0,
+                goal.categoryId === null
+                  ? 0
+                  : (expenseByCategory.get(goal.categoryId) ?? 0),
               ),
             })),
           };
@@ -181,6 +279,24 @@ export class GoalService {
     }
 
     return Math.round((amount + Number.EPSILON) * 100) / 100;
+  }
+
+  /** Parses a strict calendar date without applying a local timezone offset. */
+  private parseCalendarDate(value: string, fieldName: string): Date {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      throw new BadRequestException(`${fieldName} must use YYYY-MM-DD format`);
+    }
+
+    const date = new Date(`${value}T00:00:00.000Z`);
+
+    if (
+      Number.isNaN(date.getTime()) ||
+      date.toISOString().slice(0, 10) !== value
+    ) {
+      throw new BadRequestException(`${fieldName} must be a valid date`);
+    }
+
+    return date;
   }
 
   /** Formats an ORM date without leaking server timezone offsets. */

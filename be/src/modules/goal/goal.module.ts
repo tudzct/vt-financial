@@ -3,7 +3,7 @@ import { AuthModule } from '../auth/auth.module';
 import { GoalController } from './goal.controller';
 import { GoalService } from './goal.service';
 
-/** Wires the protected financial-goal listing feature. */
+/** Wires protected financial-goal creation and listing. */
 @Module({
   imports: [AuthModule],
   controllers: [GoalController],
