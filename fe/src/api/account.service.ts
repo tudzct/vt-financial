@@ -6,6 +6,8 @@ import {
   ApiResponse,
   CreateAccountPayload,
   CreateAccountResponse,
+  UpdateAccountPayload,
+  UpdateAccountResponse,
 } from './types'
 
 export const accountService = {
@@ -68,9 +70,15 @@ export const accountService = {
     return response.data
   },
 
-  // Cập nhật tài khoản
-  updateAccount: async (accountId: number, data: Partial<Account>): Promise<ApiResponse<Account>> => {
-    const response = await axiosInstance.put(`/accounts/${accountId}`, data)
+  /** Replaces the editable fields of one owned account. */
+  updateAccount: async (
+    accountId: number,
+    data: UpdateAccountPayload
+  ): Promise<UpdateAccountResponse> => {
+    const response = await axiosInstance.put<UpdateAccountResponse>(
+      `/v1/accounts/${accountId}`,
+      data
+    )
     return response.data
   },
 

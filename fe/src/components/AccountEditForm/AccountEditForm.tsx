@@ -7,6 +7,8 @@ import {
   UpdatedAccount,
   UpdateAccountPayload,
 } from '../../api/types'
+import checkIcon from '../../assets/add-account/check.svg'
+import closeIcon from '../../assets/add-account/close.svg'
 
 const ACCOUNT_TYPES: AccountType[] = [
   'Checking',
@@ -139,9 +141,14 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({
         : [typeof responseMessage === 'string' ? responseMessage : FALLBACK_ERROR]
 
       if (axios.isAxiosError(error) && error.response?.status === 400) {
-        setFieldErrors(mapApiFieldErrors(messages))
+        const mappedErrors = mapApiFieldErrors(messages)
+        setFieldErrors(mappedErrors)
+        setApiError(
+          Object.keys(mappedErrors).length === 0 ? messages.join(' ') : ''
+        )
+      } else {
+        setApiError(messages.join(' '))
       }
-      setApiError(messages.join(' '))
     } finally {
       submissionInFlight.current = false
       setIsSubmitting(false)
@@ -162,9 +169,14 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({
   return (
     <>
       {showSuccessToast && (
-        <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-[8px] bg-white px-5 py-4 text-[14px] font-semibold text-[#191919] shadow-[0_20px_25px_rgba(76,103,100,0.18)]" role="status">
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#299d91] text-white" aria-hidden="true">✓</span>
-          Update successful
+        <div className="fixed right-6 top-[106px] z-50 flex items-center gap-3 rounded-[8px] border-l-4 border-[#299d91] bg-white px-4 py-[14px] text-[14px] font-medium text-[#191d23] shadow-[0_20px_25px_rgba(76,103,100,0.18)] sm:right-10" role="status">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#299d91] p-1" aria-hidden="true">
+            <img src={checkIcon} alt="" className="h-[10px] w-[10px]" />
+          </span>
+          Account updated successfully!
+          <button type="button" onClick={() => setShowSuccessToast(false)} className="flex h-[18px] w-[18px] items-center justify-center p-1" aria-label="Dismiss notification">
+            <img src={closeIcon} alt="" className="h-[10px] w-[10px]" />
+          </button>
         </div>
       )}
 
@@ -214,7 +226,7 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({
         <div className="mt-6 flex items-center gap-6">
           <button type="submit" disabled={isSubmitting} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[4px] bg-[#299d91] px-8 text-[16px] font-semibold text-white hover:bg-[#278f87] disabled:cursor-not-allowed disabled:opacity-60">
             {isSubmitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
-            {isSubmitting ? 'Saving...' : 'Save Changes'}
+            {isSubmitting ? 'Saving...' : 'Save changes'}
           </button>
           <button type="button" onClick={onCancel} disabled={isSubmitting} className="p-2 text-[16px] font-semibold text-[#666] disabled:opacity-60">Cancel</button>
         </div>

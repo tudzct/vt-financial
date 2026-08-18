@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthenticatedUser } from '../auth/jwt.strategy';
 import { AccountService } from './account.service';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
 
 interface AuthenticatedRequest extends Request {
   user: AuthenticatedUser;
@@ -64,5 +66,25 @@ export class AccountController {
     @Body() dto: CreateAccountDto,
   ) {
     return this.accountService.create(request.user.userId, dto);
+  }
+
+  /** Updates an account owned by the authenticated JWT subject. */
+  @Put(':id')
+  @ApiOperation({ summary: 'Update an owned bank account' })
+  updateAccount(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: UpdateAccountDto,
+  ) {
+    if (!/^[1-9]\d*$/.test(id)) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    const accountId = Number(id);
+    if (!Number.isSafeInteger(accountId)) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    return this.accountService.update(accountId, request.user.userId, dto);
   }
 }

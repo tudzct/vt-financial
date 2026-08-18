@@ -6,8 +6,10 @@ import {
   AccountDetail,
   AccountDetailTransaction,
   AccountType,
+  UpdatedAccount,
 } from '../../api/types'
 import Loading from '../../components/Loading/Loading'
+import AccountEditForm from '../../components/AccountEditForm/AccountEditForm'
 import { useAuth } from '../../context/AuthContext'
 
 const INVALID_ACCOUNT_ID_MESSAGE = 'Invalid account ID.'
@@ -106,6 +108,7 @@ const AccountDetailPage: React.FC = () => {
   const [account, setAccount] = useState<AccountDetail | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [isEditing, setIsEditing] = useState(false)
 
   /** Validates the route and refreshes the account-detail data in place. */
   const fetchAccountDetails = useCallback(async () => {
@@ -170,6 +173,25 @@ const AccountDetailPage: React.FC = () => {
     navigate('/login')
   }
 
+  /** Applies the update response immediately, then refreshes persisted details. */
+  const handleUpdateSuccess = async (updatedAccount: UpdatedAccount) => {
+    setAccount((current) =>
+      current
+        ? {
+            ...current,
+            id: updatedAccount.account_id,
+            bank_name: updatedAccount.bank_name,
+            account_type: updatedAccount.account_type,
+            branch_name: updatedAccount.branch_name,
+            account_number_full: updatedAccount.account_number_full,
+            balance: updatedAccount.balance,
+          }
+        : current
+    )
+    setIsEditing(false)
+    await fetchAccountDetails()
+  }
+
   const profileName = user?.full_name || user?.username || 'User'
   const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'U'
 
@@ -221,10 +243,13 @@ const AccountDetailPage: React.FC = () => {
       </aside>
 
       <div className="min-w-0 flex-1">
-        <header className="flex h-[88px] items-center justify-between border-b border-[#e4e5e7] px-5 sm:px-8">
-          <div className="hidden items-center gap-1 text-[14px] text-[#9f9f9f] sm:flex">
-            <span className="text-[24px] leading-none" aria-hidden="true">»</span>
-            <span>May 19, 2023</span>
+        <header className="flex min-h-[88px] items-center justify-between border-b border-[#e4e5e7] px-5 py-5 sm:px-8">
+          <div className="hidden items-center gap-6 sm:flex">
+            {isEditing && <h1 className="w-[140px] text-[24px] font-bold leading-7">Edit<br />Details</h1>}
+            <div className="flex items-center gap-1 text-[14px] text-[#9f9f9f]">
+              <span className="text-[24px] leading-none" aria-hidden="true">»</span>
+              <span>May 19, 2023</span>
+            </div>
           </div>
           <div className="ml-auto flex items-center gap-7 sm:gap-10">
             <button type="button" className="relative hidden h-6 w-6 sm:block" aria-label="Notifications">
@@ -244,8 +269,16 @@ const AccountDetailPage: React.FC = () => {
           </div>
         </header>
 
-        <main className="px-5 pb-12 pt-4 sm:pl-6 sm:pr-8">
-          <h1 className="text-[22px] font-normal leading-8 text-[#878787]">Account Details</h1>
+        <main className={isEditing ? 'px-5 pb-12 pt-8 sm:px-10' : 'px-5 pb-12 pt-4 sm:pl-6 sm:pr-8'}>
+          {isEditing ? (
+            <div className="flex items-center gap-2 text-[14px] leading-5">
+              <button type="button" onClick={() => setIsEditing(false)} className="text-[#666]">Balances</button>
+              <span className="text-[#9f9f9f]" aria-hidden="true">›</span>
+              <span className="font-medium capitalize text-[#299d91]">Edit details</span>
+            </div>
+          ) : (
+            <h1 className="text-[22px] font-normal leading-8 text-[#878787]">Account Details</h1>
+          )}
 
           {error && (
             <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
@@ -253,9 +286,17 @@ const AccountDetailPage: React.FC = () => {
             </div>
           )}
 
-          {isLoading ? (
+          {isLoading && !isEditing ? (
             <div className="flex min-h-[420px] items-center justify-center">
               <Loading message="Loading account details..." />
+            </div>
+          ) : account && isEditing ? (
+            <div className="mt-6 flex w-full justify-center">
+              <AccountEditForm
+                account={account}
+                onCancel={() => setIsEditing(false)}
+                onSuccess={handleUpdateSuccess}
+              />
             </div>
           ) : account ? (
             <>
@@ -286,6 +327,7 @@ const AccountDetailPage: React.FC = () => {
                 <div className="mt-11 flex items-center gap-10">
                   <button
                     type="button"
+                    onClick={() => setIsEditing(true)}
                     disabled={isLoading}
                     className="rounded-[4px] bg-[#299d91] px-9 py-3 text-[14px] font-semibold text-white hover:bg-[#278f87] disabled:cursor-not-allowed disabled:opacity-50"
                   >

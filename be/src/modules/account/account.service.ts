@@ -16,11 +16,14 @@ import { AccountDetailResponseDto } from './dto/account-detail.dto';
 import { AccountListResponseDto } from './dto/account-list.dto';
 import { Account, AccountType } from './account.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
+import { UpdateAccountDto } from './dto/update-account.dto';
 
 const DUPLICATE_ACCOUNT_MESSAGE =
   'This account already exists in your account list.';
 const CREATE_ACCOUNT_ERROR_MESSAGE =
   'Unable to add the account at this time. Please try again later.';
+const UPDATE_ACCOUNT_ERROR_MESSAGE =
+  'An error occurred while saving the data. Please try again later.';
 
 export interface CreateAccountResponse {
   success: true;
@@ -32,6 +35,23 @@ export interface CreateAccountResponse {
       bank_name: string;
       account_type: Account['accountType'];
       branch_name: string | null;
+      account_number_last_4: string;
+      balance: number;
+    };
+  };
+}
+
+export interface UpdateAccountResponse {
+  success: true;
+  message: 'Account updated successfully';
+  data: {
+    account: {
+      account_id: number;
+      user_id: number;
+      bank_name: string;
+      account_type: Account['accountType'];
+      branch_name: string | null;
+      account_number_full: string;
       account_number_last_4: string;
       balance: number;
     };
@@ -216,6 +236,103 @@ export class AccountService {
       }
 
       throw new InternalServerErrorException(CREATE_ACCOUNT_ERROR_MESSAGE);
+    }
+  }
+
+  /** Validates, authorizes, and atomically updates one owned account. */
+  async update(
+    accountId: number,
+    userId: number,
+    dto: UpdateAccountDto,
+  ): Promise<UpdateAccountResponse> {
+    if (!Number.isSafeInteger(accountId) || accountId <= 0) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    if (!Number.isSafeInteger(userId) || userId <= 0) {
+      throw new UnauthorizedException(
+        'Unable to authenticate the user. Please log in again.',
+      );
+    }
+
+    if (
+      !dto ||
+      typeof dto.bank_name !== 'string' ||
+      !Object.values(AccountType).includes(dto.account_type) ||
+      (dto.branch_name !== undefined &&
+        dto.branch_name !== null &&
+        typeof dto.branch_name !== 'string') ||
+      typeof dto.account_number_full !== 'string' ||
+      typeof dto.balance !== 'number' ||
+      !Number.isFinite(dto.balance) ||
+      dto.balance < 0
+    ) {
+      throw new BadRequestException('Invalid account data.');
+    }
+
+    const bankName = dto.bank_name.normalize('NFC').trim();
+    const accountNumberFull = dto.account_number_full.trim();
+    const branchName = dto.branch_name?.normalize('NFC').trim() || null;
+    const balance = Number(dto.balance.toFixed(2));
+
+    if (
+      !bankName ||
+      !/^\d{8,34}$/.test(accountNumberFull)
+    ) {
+      throw new BadRequestException('Invalid account data.');
+    }
+
+    try {
+      return await this.dataSource.transaction(async (manager) => {
+        const repository = manager.getRepository(Account);
+        const account = await repository
+          .createQueryBuilder('account')
+          .setLock('pessimistic_write')
+          .where('account.accountId = :accountId', { accountId })
+          .getOne();
+
+        if (!account) {
+          throw new NotFoundException('This account could not be found.');
+        }
+
+        if (account.userId !== userId) {
+          throw new ForbiddenException(
+            'You do not have permission to edit this account information.',
+          );
+        }
+
+        account.bankName = bankName;
+        account.accountType = dto.account_type;
+        account.branchName = branchName;
+        account.accountNumberFull = accountNumberFull;
+        account.accountNumberLast4 = accountNumberFull.slice(-4);
+        account.balance = balance;
+
+        const savedAccount = await repository.save(account);
+
+        return {
+          success: true,
+          message: 'Account updated successfully',
+          data: {
+            account: {
+              account_id: savedAccount.accountId,
+              user_id: savedAccount.userId,
+              bank_name: savedAccount.bankName,
+              account_type: savedAccount.accountType,
+              branch_name: savedAccount.branchName ?? null,
+              account_number_full: savedAccount.accountNumberFull,
+              account_number_last_4: savedAccount.accountNumberLast4,
+              balance: Number(savedAccount.balance),
+            },
+          },
+        };
+      });
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(UPDATE_ACCOUNT_ERROR_MESSAGE);
     }
   }
 

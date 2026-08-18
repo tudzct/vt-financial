@@ -107,6 +107,35 @@ export interface CreateAccountResponse {
   };
 }
 
+/** Full replacement payload accepted by PUT /api/v1/accounts/:id. */
+export interface UpdateAccountPayload {
+  bank_name: string;
+  account_type: AccountType;
+  branch_name: string | null;
+  account_number_full: string;
+  balance: number;
+}
+
+/** Updated account returned by API-ACCOUNT-UPDATE. */
+export interface UpdatedAccount {
+  account_id: number;
+  user_id: number;
+  bank_name: string;
+  account_type: AccountType;
+  branch_name: string | null;
+  account_number_full: string;
+  account_number_last_4: string;
+  balance: number;
+}
+
+export interface UpdateAccountResponse {
+  success: true;
+  message: 'Account updated successfully';
+  data: {
+    account: UpdatedAccount;
+  };
+}
+
 export interface Category {
   category_id: number;
   category_name: string;
