@@ -1,6 +1,7 @@
 import axiosInstance from './axiosInstance'
 import {
   Account,
+  AccountDetailResponse,
   AccountListResponse,
   ApiResponse,
   CreateAccountPayload,
@@ -24,6 +25,14 @@ export const accountService = {
   /** Loads the authenticated user's account-list contract. */
   getAccountList: async (): Promise<AccountListResponse> => {
     const response = await axiosInstance.get<AccountListResponse>('/v1/accounts')
+    return response.data
+  },
+
+  /** Loads one owned account and its five most recent transactions. */
+  getAccountDetail: async (accountId: number): Promise<AccountDetailResponse> => {
+    const response = await axiosInstance.get<AccountDetailResponse>(
+      `/v1/accounts/${accountId}`
+    )
     return response.data
   },
 

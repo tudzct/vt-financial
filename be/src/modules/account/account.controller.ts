@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -23,6 +32,28 @@ export class AccountController {
   @ApiOperation({ summary: 'List owned accounts' })
   findAll(@Req() request: AuthenticatedRequest) {
     return this.accountService.findAllByUserId(request.user.userId);
+  }
+
+  /** Returns one owned account with at most five recent transactions. */
+  @Get(':id')
+  @ApiOperation({ summary: 'Get owned account details' })
+  findOne(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!/^[1-9]\d*$/.test(id)) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    const accountId = Number(id);
+    if (!Number.isSafeInteger(accountId)) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    return this.accountService.findOneWithTransactions(
+      accountId,
+      request.user.userId,
+    );
   }
 
   /** Creates an account owned by the authenticated JWT subject. */

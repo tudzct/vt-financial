@@ -136,6 +136,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     location.pathname === '/expenses' ||
     location.pathname === '/accounts' ||
     location.pathname === '/accounts/add' ||
+    /^\/accounts\/[^/]+$/.test(location.pathname) ||
     location.pathname === '/account'
   ) {
     return <>{children}</>

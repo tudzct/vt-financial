@@ -1,13 +1,18 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { User } from '../user/user.entity';
+import { Transaction, TransactionType } from '../transaction/transaction.entity';
+import { AccountDetailResponseDto } from './dto/account-detail.dto';
 import { AccountListResponseDto } from './dto/account-list.dto';
 import { Account, AccountType } from './account.entity';
 import { CreateAccountDto } from './dto/create-account.dto';
@@ -39,8 +44,93 @@ export class AccountService {
   constructor(
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
+    @InjectRepository(Transaction)
+    private readonly transactionRepository: Repository<Transaction>,
     private readonly dataSource: DataSource,
   ) {}
+
+  /** Loads one owned account and maps its five newest transactions read-only. */
+  async findOneWithTransactions(
+    accountId: number,
+    userId: number,
+  ): Promise<AccountDetailResponseDto> {
+    if (!Number.isSafeInteger(accountId) || accountId <= 0) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    if (!Number.isSafeInteger(userId) || userId <= 0) {
+      throw new UnauthorizedException(
+        'Unable to authenticate the user. Please log in again.',
+      );
+    }
+
+    try {
+      const account = await this.accountRepository.findOne({
+        where: { accountId },
+      });
+
+      if (!account) {
+        throw new NotFoundException('This account was not found.');
+      }
+
+      if (account.userId !== userId) {
+        throw new ForbiddenException(
+          'You are not authorized to view this account information.',
+        );
+      }
+
+      const transactions = await this.transactionRepository.find({
+        where: { accountId },
+        order: { transactionDate: 'DESC', transactionId: 'DESC' },
+        take: 5,
+      });
+
+      return {
+        success: true,
+        message: 'OK',
+        data: {
+          id: account.accountId,
+          bank_name: account.bankName,
+          account_type: account.accountType,
+          branch_name: account.branchName ?? null,
+          account_number_full: account.accountNumberFull,
+          balance: Number(account.balance),
+          recent_transactions: transactions.map((transaction) => ({
+            date: this.toIsoDate(transaction.transactionDate),
+            amount:
+              transaction.type === TransactionType.EXPENSE
+                ? -Number(transaction.amount)
+                : Number(transaction.amount),
+            description: transaction.itemDescription,
+            status: transaction.status,
+            receipt_id: transaction.receiptId ?? null,
+            type: transaction.type,
+          })),
+        },
+      };
+    } catch (error) {
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(
+        'A system error occurred while retrieving the account details. Please try again later.',
+      );
+    }
+  }
+
+  /** Converts a database DATE value to the contract's timezone-neutral format. */
+  private toIsoDate(value: Date | string): string {
+    if (typeof value === 'string') {
+      return value.slice(0, 10);
+    }
+
+    return [
+      value.getUTCFullYear(),
+      String(value.getUTCMonth() + 1).padStart(2, '0'),
+      String(value.getUTCDate()).padStart(2, '0'),
+    ].join('-');
+  }
 
   /** Validates, normalizes, and atomically persists one owned account. */
   async create(

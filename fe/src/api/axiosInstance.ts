@@ -34,6 +34,10 @@ axiosInstance.interceptors.response.use(
       error.config?.url !== '/auth/login' &&
       error.config?.url !== '/v1/expenses/summary' &&
       !(
+        /^\/v1\/accounts\/[^/]+$/.test(error.config?.url || '') &&
+        error.config?.method?.toLowerCase() === 'get'
+      ) &&
+      !(
         error.config?.url === '/v1/accounts' &&
         error.config?.method?.toLowerCase() === 'post'
       )
