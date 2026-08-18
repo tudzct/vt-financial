@@ -40,7 +40,11 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   const [isSuccess, setIsSuccess] = useState(false)
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {
+      setIsModalVisible(false)
+      setIsSuccess(false)
+      return
+    }
 
     setSelectedAccount(account)
     setIsModalVisible(true)
@@ -54,7 +58,8 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
     if (!isSuccess) return
 
     const timer = window.setTimeout(() => {
-      void Promise.resolve(onAutoComplete()).finally(onClose)
+      onClose()
+      void onAutoComplete()
     }, 1500)
 
     return () => window.clearTimeout(timer)
