@@ -52,6 +52,34 @@ export interface AccountListResponse {
   data: AccountListData;
 }
 
+/** Payload accepted by POST /api/v1/accounts. */
+export interface CreateAccountPayload {
+  bank_name: string;
+  account_type: AccountType;
+  branch_name?: string;
+  account_number_full: string;
+  balance: number;
+}
+
+/** Sensitive-number-safe account returned after creation. */
+export interface CreatedAccount {
+  id: number;
+  user_id: number;
+  bank_name: string;
+  account_type: AccountType;
+  branch_name: string | null;
+  account_number_last_4: string;
+  balance: number;
+}
+
+export interface CreateAccountResponse {
+  success: true;
+  message: 'Account created successfully';
+  data: {
+    account: CreatedAccount;
+  };
+}
+
 export interface Category {
   category_id: number;
   category_name: string;

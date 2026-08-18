@@ -135,6 +135,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     location.pathname === '/transactions/add' ||
     location.pathname === '/expenses' ||
     location.pathname === '/accounts' ||
+    location.pathname === '/accounts/add' ||
     location.pathname === '/account'
   ) {
     return <>{children}</>

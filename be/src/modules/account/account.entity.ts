@@ -42,7 +42,7 @@ export class Account {
   accountType: AccountType;
 
   @Column({ name: 'branch_name', type: 'varchar', length: 255, nullable: true })
-  branchName: string;
+  branchName: string | null;
 
   @Column({ name: 'account_number_full', type: 'varchar', length: 255 })
   accountNumberFull: string;

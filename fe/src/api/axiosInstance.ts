@@ -32,7 +32,11 @@ axiosInstance.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       error.config?.url !== '/auth/login' &&
-      error.config?.url !== '/v1/expenses/summary'
+      error.config?.url !== '/v1/expenses/summary' &&
+      !(
+        error.config?.url === '/v1/accounts' &&
+        error.config?.method?.toLowerCase() === 'post'
+      )
     ) {
       // Token hết hạn hoặc không hợp lệ
       localStorage.removeItem('token')
