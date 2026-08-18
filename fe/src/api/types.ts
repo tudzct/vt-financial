@@ -136,6 +136,12 @@ export interface UpdateAccountResponse {
   };
 }
 
+/** Successful response returned by API-ACCOUNT-DELETE. */
+export interface DeleteAccountResponse {
+  message: 'Account deleted successfully';
+  deleted_account_id: number;
+}
+
 export interface Category {
   category_id: number;
   category_name: string;

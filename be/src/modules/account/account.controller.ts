@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -86,5 +87,24 @@ export class AccountController {
     }
 
     return this.accountService.update(accountId, request.user.userId, dto);
+  }
+
+  /** Deletes an owned account and all of its related transactions. */
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete an owned bank account' })
+  deleteAccount(
+    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest,
+  ) {
+    if (!/^[1-9]\d*$/.test(id)) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    const accountId = Number(id);
+    if (!Number.isSafeInteger(accountId)) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    return this.accountService.delete(accountId, request.user.userId);
   }
 }

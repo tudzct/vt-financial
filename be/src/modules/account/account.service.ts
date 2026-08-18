@@ -24,6 +24,8 @@ const CREATE_ACCOUNT_ERROR_MESSAGE =
   'Unable to add the account at this time. Please try again later.';
 const UPDATE_ACCOUNT_ERROR_MESSAGE =
   'An error occurred while saving the data. Please try again later.';
+const DELETE_ACCOUNT_ERROR_MESSAGE =
+  'A system error occurred. The account and related transactions could not be deleted.';
 
 export interface CreateAccountResponse {
   success: true;
@@ -56,6 +58,11 @@ export interface UpdateAccountResponse {
       balance: number;
     };
   };
+}
+
+export interface DeleteAccountResponse {
+  message: 'Account deleted successfully';
+  deleted_account_id: number;
 }
 
 /** Provides owned-account lookup business logic. */
@@ -333,6 +340,73 @@ export class AccountService {
       }
 
       throw new InternalServerErrorException(UPDATE_ACCOUNT_ERROR_MESSAGE);
+    }
+  }
+
+  /** Atomically deletes an owned account and every related transaction. */
+  async delete(
+    accountId: number,
+    userId: number,
+  ): Promise<DeleteAccountResponse> {
+    if (!Number.isSafeInteger(accountId) || accountId <= 0) {
+      throw new BadRequestException('Invalid account ID.');
+    }
+
+    if (!Number.isSafeInteger(userId) || userId <= 0) {
+      throw new UnauthorizedException(
+        'Unable to authenticate the user. Please log in again.',
+      );
+    }
+
+    const queryRunner = this.dataSource.createQueryRunner();
+
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      const accountRepository = queryRunner.manager.getRepository(Account);
+      const account = await accountRepository
+        .createQueryBuilder('account')
+        .setLock('pessimistic_write')
+        .where('account.accountId = :accountId', { accountId })
+        .andWhere('account.userId = :userId', { userId })
+        .getOne();
+
+      if (!account) {
+        throw new NotFoundException(
+          'Account not found or not owned by current user',
+        );
+      }
+
+      await queryRunner.manager
+        .getRepository(Transaction)
+        .delete({ accountId });
+
+      const deletion = await accountRepository.delete({ accountId, userId });
+      if (deletion.affected !== 1) {
+        throw new Error('Account deletion did not affect exactly one row.');
+      }
+
+      await queryRunner.commitTransaction();
+
+      return {
+        message: 'Account deleted successfully',
+        deleted_account_id: accountId,
+      };
+    } catch (error) {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException(DELETE_ACCOUNT_ERROR_MESSAGE);
+    } finally {
+      if (!queryRunner.isReleased) {
+        await queryRunner.release();
+      }
     }
   }
 

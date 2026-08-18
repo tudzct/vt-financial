@@ -10,6 +10,9 @@ import {
 } from '../../api/types'
 import Loading from '../../components/Loading/Loading'
 import AccountEditForm from '../../components/AccountEditForm/AccountEditForm'
+import DeleteAccountModal, {
+  DeleteAccountTarget,
+} from '../../components/DeleteAccountModal/DeleteAccountModal'
 import { useAuth } from '../../context/AuthContext'
 
 const INVALID_ACCOUNT_ID_MESSAGE = 'Invalid account ID.'
@@ -109,6 +112,9 @@ const AccountDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [isEditing, setIsEditing] = useState(false)
+  const [selectedAccount, setSelectedAccount] =
+    useState<DeleteAccountTarget | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
   /** Validates the route and refreshes the account-detail data in place. */
   const fetchAccountDetails = useCallback(async () => {
@@ -191,6 +197,34 @@ const AccountDetailPage: React.FC = () => {
     setIsEditing(false)
     await fetchAccountDetails()
   }
+
+  /** Opens deletion confirmation for the loaded account. */
+  const handleRemoveAccount = () => {
+    if (!account) return
+
+    setSelectedAccount({
+      id: account.id,
+      bankName: account.bank_name,
+      accountNumberLast4: account.account_number_full.slice(-4),
+    })
+    setIsDeleteModalOpen(true)
+  }
+
+  /** Closes the delete flow and clears its selected account. */
+  const handleCloseDeleteModal = useCallback(() => {
+    setIsDeleteModalOpen(false)
+    setSelectedAccount(null)
+  }, [])
+
+  /** Removes deleted account data from the current page immediately. */
+  const handleAccountDeleted = useCallback(() => {
+    setAccount(null)
+  }, [])
+
+  /** Returns to the refreshed balances route after the success delay. */
+  const handleDeleteAutoComplete = useCallback(() => {
+    navigate('/accounts')
+  }, [navigate])
 
   const profileName = user?.full_name || user?.username || 'User'
   const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'U'
@@ -336,6 +370,7 @@ const AccountDetailPage: React.FC = () => {
                   <button
                     type="button"
                     disabled={isLoading}
+                    onClick={handleRemoveAccount}
                     className="px-1 py-3 text-[14px] text-[#9f9f9f] hover:text-[#666] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Remove
@@ -380,6 +415,14 @@ const AccountDetailPage: React.FC = () => {
           ) : null}
         </main>
       </div>
+
+      <DeleteAccountModal
+        account={selectedAccount}
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onDeleted={handleAccountDeleted}
+        onAutoComplete={handleDeleteAutoComplete}
+      />
     </div>
   )
 }

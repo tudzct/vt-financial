@@ -6,6 +6,9 @@ import { AccountListItem, AccountType } from '../../api/types'
 import mastercardLogo from '../../assets/account/mastercard.png'
 import visaLogo from '../../assets/account/visa.png'
 import Loading from '../../components/Loading/Loading'
+import DeleteAccountModal, {
+  DeleteAccountTarget,
+} from '../../components/DeleteAccountModal/DeleteAccountModal'
 import { useAuth } from '../../context/AuthContext'
 import { formatCurrency } from '../../utils/format'
 
@@ -52,6 +55,9 @@ const Account: React.FC = () => {
   const [accounts, setAccounts] = useState<AccountListItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [selectedAccount, setSelectedAccount] =
+    useState<DeleteAccountTarget | null>(null)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const requestInFlight = useRef(false)
 
   /** Validates the local session and refreshes the owned accounts in place. */
@@ -116,6 +122,34 @@ const Account: React.FC = () => {
     logout()
     navigate('/login')
   }
+
+  /** Opens the confirmation dialog for one validated account-list row. */
+  const handleRemoveAccount = (account: AccountListItem) => {
+    setSelectedAccount({
+      id: account.id,
+      bankName: account.bank_name,
+      accountNumberLast4: account.account_number_last_4,
+    })
+    setIsDeleteModalOpen(true)
+  }
+
+  /** Closes the delete flow and clears its selected account. */
+  const handleCloseDeleteModal = useCallback(() => {
+    setIsDeleteModalOpen(false)
+    setSelectedAccount(null)
+  }, [])
+
+  /** Removes the deleted row locally without changing authentication state. */
+  const handleAccountDeleted = useCallback((accountId: number) => {
+    setAccounts((current) =>
+      current.filter((account) => account.id !== accountId)
+    )
+  }, [])
+
+  /** Refreshes persisted balances after the success card delay. */
+  const handleDeleteAutoComplete = useCallback(async () => {
+    await fetchAccounts()
+  }, [fetchAccounts])
 
   const profileName = user?.full_name || user?.username || 'User'
   const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'U'
@@ -257,6 +291,7 @@ const Account: React.FC = () => {
                       <button
                         type="button"
                         disabled={isLoading}
+                        onClick={() => handleRemoveAccount(account)}
                         className="text-[16px] text-[#299d91] disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Remove
@@ -297,6 +332,14 @@ const Account: React.FC = () => {
           )}
         </main>
       </div>
+
+      <DeleteAccountModal
+        account={selectedAccount}
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onDeleted={handleAccountDeleted}
+        onAutoComplete={handleDeleteAutoComplete}
+      />
     </div>
   )
 }

@@ -6,6 +6,7 @@ import {
   ApiResponse,
   CreateAccountPayload,
   CreateAccountResponse,
+  DeleteAccountResponse,
   UpdateAccountPayload,
   UpdateAccountResponse,
 } from './types'
@@ -82,9 +83,11 @@ export const accountService = {
     return response.data
   },
 
-  // Xóa tài khoản
-  deleteAccount: async (accountId: number): Promise<ApiResponse<void>> => {
-    const response = await axiosInstance.delete(`/accounts/${accountId}`)
+  /** Deletes one owned account and all of its related transactions. */
+  deleteAccount: async (accountId: number): Promise<DeleteAccountResponse> => {
+    const response = await axiosInstance.delete<DeleteAccountResponse>(
+      `/v1/accounts/${accountId}`
+    )
     return response.data
   },
 }
