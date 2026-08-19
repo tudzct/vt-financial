@@ -6,6 +6,7 @@ import AdjustGoalModal from '../../components/AdjustGoalModal/AdjustGoalModal'
 import CreateGoalModal from '../../components/CreateGoalModal/CreateGoalModal'
 import ErrorComponent from '../../components/Error/Error'
 import Loading from '../../components/Loading/Loading'
+import SavingsSummaryChart from '../../components/SavingsSummaryChart/SavingsSummaryChart'
 
 const SYSTEM_ERROR_MESSAGE =
   'Đã xảy ra lỗi hệ thống khi tải mục tiêu, vui lòng thử lại sau.'
@@ -95,77 +96,6 @@ const SavingsGoalCard: React.FC<{
           Adjust Goal&nbsp;&nbsp;⌕
         </button>
       </div>
-    </section>
-  )
-}
-
-/** Renders a source-grounded progress line ending at the achieved amount. */
-const SavingSummaryCard: React.FC<{ goal: SavingGoal }> = ({ goal }) => {
-  const progress = getProgress(goal.target_achieved, goal.target_amount)
-  const endY = 162 - (progress / 100) * 112
-  const linePoints = Array.from({ length: 7 }, (_, index) => {
-    const x = 58 + index * 84
-    const y = 162 - ((162 - endY) * index) / 6
-    return `${x},${y}`
-  }).join(' ')
-  const monthLabel = formatDate(goal.end_date, { month: 'short', year: 'numeric' })
-
-  return (
-    <section className="h-[294px] min-w-0 rounded-lg bg-white p-6 shadow-[0_14px_28px_rgba(28,39,49,0.08)]">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-12">
-          <h2 className="text-base font-semibold text-[#444]">Saving Summary</h2>
-          <button type="button" className="text-xs text-[#666]">
-            {monthLabel}&nbsp;&nbsp;⌄
-          </button>
-        </div>
-        <div className="flex items-center gap-8 text-[11px] text-[#666]">
-          <span className="flex items-center gap-2">
-            <i className="h-1.5 w-4 rounded-sm bg-[#2fa69b]" /> This month
-          </span>
-          <span className="flex items-center gap-2">
-            <i className="h-1.5 w-4 rounded-sm bg-[#cfcfcf]" /> Same period last month
-          </span>
-        </div>
-      </div>
-
-      <svg
-        className="mt-5 h-[205px] w-full"
-        viewBox="0 0 590 205"
-        role="img"
-        aria-label={`Saving progress is ${Math.round(progress)} percent`}
-      >
-        <defs>
-          <linearGradient id="saving-area" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#2fa69b" stopOpacity="0.24" />
-            <stop offset="100%" stopColor="#2fa69b" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-        {[24, 70, 116, 162].map((y) => (
-          <line key={y} x1="58" x2="562" y1={y} y2={y} stroke="#f0f0f0" />
-        ))}
-        {[58, 142, 226, 310, 394, 478, 562].map((x) => (
-          <line key={x} x1={x} x2={x} y1="18" y2="162" stroke="#ececec" />
-        ))}
-        <line
-          x1="58"
-          x2="562"
-          y1="162"
-          y2="162"
-          stroke="#cfcfcf"
-          strokeDasharray="4 4"
-        />
-        <polygon points={`58,162 ${linePoints} 562,162`} fill="url(#saving-area)" />
-        <polyline points={linePoints} fill="none" stroke="#2fa69b" strokeWidth="2" />
-        <circle cx="562" cy={endY} r="4" fill="#2fa69b" />
-        <text x="0" y="28" fill="#aaa" fontSize="11">{formatMoney(goal.target_amount)}</text>
-        <text x="8" y="166" fill="#aaa" fontSize="11">$0</text>
-        {['01', '05', '10', '15', '20', '25', '30'].map((day, index) => (
-          <text key={day} x={54 + index * 84} y="190" fill="#999" fontSize="11">
-            {index === 0 ? `${monthLabel.split(' ')[0]} ${day}` : day}
-          </text>
-        ))}
-      </svg>
     </section>
   )
 }
@@ -333,15 +263,21 @@ const Goals: React.FC = () => {
         </section>
       ) : (
         <>
-          {goalData.savingGoal && (
-            <div className="grid grid-cols-[368px_minmax(0,1fr)] gap-6">
+          <div
+            className={
+              goalData.savingGoal
+                ? 'grid grid-cols-[368px_minmax(0,1fr)] gap-6'
+                : ''
+            }
+          >
+            {goalData.savingGoal && (
               <SavingsGoalCard goal={goalData.savingGoal} onAdjust={openAdjustment} />
-              <SavingSummaryCard goal={goalData.savingGoal} />
-            </div>
-          )}
+            )}
+            <SavingsSummaryChart />
+          </div>
 
           {goalData.expenseGoals.length > 0 && (
-            <section className={goalData.savingGoal ? 'mt-8' : ''}>
+            <section className="mt-8">
               <h2 className="mb-5 text-[22px] font-normal text-[#888]">
                 Expenses Goals by Category
               </h2>
