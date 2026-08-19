@@ -15,6 +15,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (error || !user) {
       const request = context.switchToHttp().getRequest<Request>();
 
+      if (request.path === '/api/v1/savings/summary') {
+        throw new UnauthorizedException(
+          'Không thể xác thực người dùng. Vui lòng đăng nhập lại.',
+        );
+      }
+
       if (/^\/api\/v1\/accounts\/[^/]+$/.test(request.path)) {
         throw new UnauthorizedException(
           'Unable to authenticate the user. Please log in again.',

@@ -305,3 +305,19 @@ export interface UpdateGoalResponse {
     updated_goal: UpdatedGoalData;
   };
 }
+
+/** One ordered monthly value returned by API-SAVINGS-SUMMARY. */
+export interface MonthlySavings {
+  month: string;
+  amount: number;
+}
+
+/** Successful response returned by GET /api/v1/savings/summary. */
+export interface SavingsSummaryResponse {
+  user_id: number;
+  year: number;
+  summary: {
+    this_year: MonthlySavings[];
+    last_year: MonthlySavings[];
+  };
+}
