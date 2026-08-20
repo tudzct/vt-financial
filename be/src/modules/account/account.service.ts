@@ -44,19 +44,16 @@ export interface CreateAccountResponse {
 }
 
 export interface UpdateAccountResponse {
-  success: true;
   message: 'Account updated successfully';
-  data: {
-    account: {
-      account_id: number;
-      user_id: number;
-      bank_name: string;
-      account_type: Account['accountType'];
-      branch_name: string | null;
-      account_number_full: string;
-      account_number_last_4: string;
-      balance: number;
-    };
+  account: {
+    account_id: number;
+    user_id: number;
+    bank_name: string;
+    account_type: Account['accountType'];
+    branch_name: string | null;
+    account_number_full: string;
+    account_number_last_4: string;
+    balance: number;
   };
 }
 
@@ -318,19 +315,16 @@ export class AccountService {
         const savedAccount = await repository.save(account);
 
         return {
-          success: true,
           message: 'Account updated successfully',
-          data: {
-            account: {
-              account_id: savedAccount.accountId,
-              user_id: savedAccount.userId,
-              bank_name: savedAccount.bankName,
-              account_type: savedAccount.accountType,
-              branch_name: savedAccount.branchName ?? null,
-              account_number_full: savedAccount.accountNumberFull,
-              account_number_last_4: savedAccount.accountNumberLast4,
-              balance: Number(savedAccount.balance),
-            },
+          account: {
+            account_id: savedAccount.accountId,
+            user_id: savedAccount.userId,
+            bank_name: savedAccount.bankName,
+            account_type: savedAccount.accountType,
+            branch_name: savedAccount.branchName ?? null,
+            account_number_full: savedAccount.accountNumberFull,
+            account_number_last_4: savedAccount.accountNumberLast4,
+            balance: Number(savedAccount.balance),
           },
         };
       });

@@ -2,10 +2,16 @@ import axios from 'axios'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { accountService } from '../../api/account.service'
-import { AccountListItem, AccountType } from '../../api/types'
+import {
+  AccountDetail,
+  AccountListItem,
+  AccountType,
+  UpdatedAccount,
+} from '../../api/types'
 import mastercardLogo from '../../assets/account/mastercard.png'
 import visaLogo from '../../assets/account/visa.png'
 import Loading from '../../components/Loading/Loading'
+import AccountEditForm from '../../components/AccountEditForm/AccountEditForm'
 import DeleteAccountModal, {
   DeleteAccountTarget,
 } from '../../components/DeleteAccountModal/DeleteAccountModal'
@@ -13,6 +19,8 @@ import { useAuth } from '../../context/AuthContext'
 import { formatCurrency } from '../../utils/format'
 
 const GENERAL_ERROR_MESSAGE = 'Đã xảy ra lỗi hệ thống, vui lòng thử lại sau.'
+const ACCOUNT_DETAIL_ERROR_MESSAGE =
+  'An error occurred while loading the account information. Please try again later.'
 const ACCOUNT_TYPES: AccountType[] = [
   'Checking',
   'Credit Card',
@@ -48,8 +56,26 @@ const isAccountListItem = (value: unknown): value is AccountListItem => {
   )
 }
 
-/** Renders the Figma 105. Balances account-list experience for UC-05. */
-const Account: React.FC = () => {
+/** Confirms that an account-detail payload can safely pre-populate the edit form. */
+const isEditableAccount = (value: unknown): value is AccountDetail => {
+  if (!value || typeof value !== 'object') return false
+
+  const account = value as Partial<AccountDetail>
+  return (
+    Number.isSafeInteger(account.id) &&
+    Number(account.id) > 0 &&
+    typeof account.bank_name === 'string' &&
+    ACCOUNT_TYPES.includes(account.account_type as AccountType) &&
+    (account.branch_name === null || typeof account.branch_name === 'string') &&
+    typeof account.account_number_full === 'string' &&
+    /^\d{8,34}$/.test(account.account_number_full) &&
+    typeof account.balance === 'number' &&
+    Number.isFinite(account.balance)
+  )
+}
+
+/** Renders the Figma 105/106 account list and quick-edit experience. */
+const AccountListPage: React.FC = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [accounts, setAccounts] = useState<AccountListItem[]>([])
@@ -58,7 +84,11 @@ const Account: React.FC = () => {
   const [selectedAccount, setSelectedAccount] =
     useState<DeleteAccountTarget | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editingAccount, setEditingAccount] = useState<AccountDetail | null>(null)
+  const [isOpeningEditor, setIsOpeningEditor] = useState(false)
   const requestInFlight = useRef(false)
+  const editRequestInFlight = useRef(false)
 
   /** Validates the local session and refreshes the owned accounts in place. */
   const fetchAccounts = useCallback(async () => {
@@ -151,6 +181,50 @@ const Account: React.FC = () => {
     await fetchAccounts()
   }, [fetchAccounts])
 
+  /** Enables or exits quick edit mode without mutating stored account data. */
+  const handleToggleEditMode = () => {
+    if (isEditMode) {
+      setEditingAccount(null)
+      setError('')
+    }
+    setIsEditMode((current) => !current)
+  }
+
+  /** Loads the owned account's full editable fields before opening the form. */
+  const handleEditAccount = async (accountId: number) => {
+    if (editRequestInFlight.current) return
+
+    editRequestInFlight.current = true
+    setIsOpeningEditor(true)
+    setError('')
+
+    try {
+      const response = await accountService.getAccountDetail(accountId)
+      if (!response.success || !isEditableAccount(response.data)) {
+        throw new Error(ACCOUNT_DETAIL_ERROR_MESSAGE)
+      }
+
+      setEditingAccount(response.data)
+    } catch (requestError: unknown) {
+      const message = axios.isAxiosError(requestError)
+        ? requestError.response?.data?.message || ACCOUNT_DETAIL_ERROR_MESSAGE
+        : requestError instanceof Error
+          ? requestError.message
+          : ACCOUNT_DETAIL_ERROR_MESSAGE
+      setError(Array.isArray(message) ? message.join(', ') : String(message))
+    } finally {
+      editRequestInFlight.current = false
+      setIsOpeningEditor(false)
+    }
+  }
+
+  /** Completes UC-08.1 by closing edit mode and reloading the owned list. */
+  const handleUpdateSuccess = async (_updatedAccount: UpdatedAccount) => {
+    setEditingAccount(null)
+    setIsEditMode(false)
+    await fetchAccounts()
+  }
+
   const profileName = user?.full_name || user?.username || 'User'
   const profileInitial = profileName.trim().charAt(0).toUpperCase() || 'U'
 
@@ -203,9 +277,16 @@ const Account: React.FC = () => {
 
       <div className="min-w-0 flex-1">
         <header className="flex h-[88px] items-center justify-between border-b border-[#e4e5e7] px-5 sm:px-8">
-          <div className="hidden items-center gap-1 text-[14px] text-[#9f9f9f] sm:flex">
-            <span className="text-[24px] leading-none" aria-hidden="true">»</span>
-            <span>May 19, 2023</span>
+          <div className="hidden items-center gap-6 sm:flex">
+            {editingAccount && (
+              <h1 className="w-[140px] text-[24px] font-bold leading-7 text-[#191919]">
+                Edit<br />Details
+              </h1>
+            )}
+            <div className="flex items-center gap-1 text-[14px] text-[#9f9f9f]">
+              <span className="text-[24px] leading-none" aria-hidden="true">»</span>
+              <span>May 19, 2023</span>
+            </div>
           </div>
           <div className="ml-auto flex items-center gap-7 sm:gap-10">
             <button type="button" className="relative hidden h-6 w-6 sm:block" aria-label="Notifications">
@@ -225,8 +306,16 @@ const Account: React.FC = () => {
           </div>
         </header>
 
-        <main className="px-5 pb-12 pt-4 sm:px-8">
-          <h1 className="text-[22px] font-normal leading-8 text-[#878787]">Balances</h1>
+        <main className={editingAccount ? 'px-5 pb-12 pt-8 sm:px-10' : 'px-5 pb-12 pt-4 sm:px-8'}>
+          {editingAccount ? (
+            <div className="flex items-center gap-2 text-[14px] leading-5">
+              <button type="button" onClick={() => setEditingAccount(null)} className="text-[#666]">Balances</button>
+              <span className="text-[#9f9f9f]" aria-hidden="true">›</span>
+              <span className="font-medium capitalize text-[#299d91]">Edit details</span>
+            </div>
+          ) : (
+            <h1 className="text-[22px] font-normal leading-8 text-[#878787]">Balances</h1>
+          )}
 
           {error && (
             <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
@@ -234,7 +323,15 @@ const Account: React.FC = () => {
             </div>
           )}
 
-          {isLoading ? (
+          {editingAccount ? (
+            <div className="mt-6 flex w-full justify-center">
+              <AccountEditForm
+                account={editingAccount}
+                onCancel={() => setEditingAccount(null)}
+                onSuccess={handleUpdateSuccess}
+              />
+            </div>
+          ) : isLoading ? (
             <div className="flex min-h-[420px] items-center justify-center">
               <Loading message="Đang tải danh sách tài khoản..." />
             </div>
@@ -257,10 +354,21 @@ const Account: React.FC = () => {
                 {accounts.map((account) => (
                   <article
                     key={account.id}
-                    className="flex min-h-[304px] flex-col rounded-[8px] bg-white p-6 shadow-[0_20px_25px_rgba(76,103,100,0.1)]"
+                    className="relative flex min-h-[304px] flex-col rounded-[8px] bg-white p-6 shadow-[0_20px_25px_rgba(76,103,100,0.1)]"
                   >
+                    {isEditMode && (
+                      <button
+                        type="button"
+                        disabled={isOpeningEditor}
+                        onClick={() => void handleEditAccount(account.id)}
+                        className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-[#299d91] text-[22px] leading-none text-white shadow-md transition hover:bg-[#278f87] disabled:cursor-not-allowed disabled:opacity-60"
+                        aria-label={`Edit ${account.bank_name} account`}
+                      >
+                        <span aria-hidden="true">✎</span>
+                      </button>
+                    )}
                     <div className="flex h-11 items-center justify-between gap-4 border-b border-[rgba(210,210,210,0.25)] pb-3">
-                      <h2 className="truncate text-[16px] font-bold capitalize leading-6 text-[#878787]">
+                      <h2 className={`truncate text-[16px] font-bold capitalize leading-6 text-[#878787] ${isEditMode ? 'pr-9' : ''}`}>
                         {account.account_type}
                       </h2>
                       <div className="flex min-w-0 items-center gap-1 text-right text-[12px] font-medium text-[#666]">
@@ -321,9 +429,10 @@ const Account: React.FC = () => {
                     <button
                       type="button"
                       disabled={isLoading}
+                      onClick={handleToggleEditMode}
                       className="w-48 px-6 py-3 text-[16px] font-medium text-[#9f9f9f] disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      Edit Accounts
+                      {isEditMode ? 'Exit Edit Mode' : 'Edit Accounts'}
                     </button>
                   </div>
                 </article>
@@ -344,4 +453,4 @@ const Account: React.FC = () => {
   )
 }
 
-export default Account
+export default AccountListPage

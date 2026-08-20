@@ -129,11 +129,8 @@ export interface UpdatedAccount {
 }
 
 export interface UpdateAccountResponse {
-  success: true;
   message: 'Account updated successfully';
-  data: {
-    account: UpdatedAccount;
-  };
+  account: UpdatedAccount;
 }
 
 /** Successful response returned by API-ACCOUNT-DELETE. */

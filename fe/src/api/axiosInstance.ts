@@ -40,6 +40,10 @@ axiosInstance.interceptors.response.use(
       !(
         error.config?.url === '/v1/accounts' &&
         error.config?.method?.toLowerCase() === 'post'
+      ) &&
+      !(
+        /^\/v1\/accounts\/[^/]+$/.test(error.config?.url || '') &&
+        error.config?.method?.toLowerCase() === 'put'
       )
     ) {
       // Token hết hạn hoặc không hợp lệ

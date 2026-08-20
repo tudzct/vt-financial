@@ -36,6 +36,11 @@ type FieldName = keyof FormValues
 type FieldErrors = Partial<Record<FieldName, string>>
 
 const FALLBACK_ERROR = 'An error occurred while saving the data. Please try again later.'
+const STATUS_ERROR_MESSAGES: Partial<Record<number, string>> = {
+  403: 'You do not have permission to edit this account information.',
+  404: 'This account could not be found.',
+  500: FALLBACK_ERROR,
+}
 
 /** Maps backend validation details to the corresponding editable field. */
 const mapApiFieldErrors = (messages: string[]): FieldErrors => {
@@ -70,6 +75,7 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({
   const [apiError, setApiError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccessToast, setShowSuccessToast] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
   const submissionInFlight = useRef(false)
 
   /** Updates one controlled field and clears its stale validation error. */
@@ -103,7 +109,7 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({
   }
 
   /** Submits one idempotent full account update and handles the success transition. */
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleUpdateAccount = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (submissionInFlight.current) return
 
@@ -129,23 +135,28 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({
 
     try {
       const response = await accountService.updateAccount(account.id, payload)
+      setSuccessMessage(response.message)
       setShowSuccessToast(true)
       await new Promise((resolve) => window.setTimeout(resolve, 1500))
-      await onSuccess(response.data.account)
+      await onSuccess(response.account)
     } catch (error: unknown) {
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined
       const responseMessage = axios.isAxiosError(error)
         ? error.response?.data?.message
         : undefined
       const messages = Array.isArray(responseMessage)
         ? responseMessage.map(String)
-        : [typeof responseMessage === 'string' ? responseMessage : FALLBACK_ERROR]
+        : [
+            (status && STATUS_ERROR_MESSAGES[status]) ||
+              (typeof responseMessage === 'string'
+                ? responseMessage
+                : FALLBACK_ERROR),
+          ]
 
       if (axios.isAxiosError(error) && error.response?.status === 400) {
         const mappedErrors = mapApiFieldErrors(messages)
         setFieldErrors(mappedErrors)
-        setApiError(
-          Object.keys(mappedErrors).length === 0 ? messages.join(' ') : ''
-        )
+        setApiError(messages.join(' '))
       } else {
         setApiError(messages.join(' '))
       }
@@ -173,14 +184,14 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#299d91] p-1" aria-hidden="true">
             <img src={checkIcon} alt="" className="h-[10px] w-[10px]" />
           </span>
-          Account updated successfully!
+          {successMessage}
           <button type="button" onClick={() => setShowSuccessToast(false)} className="flex h-[18px] w-[18px] items-center justify-center p-1" aria-label="Dismiss notification">
             <img src={closeIcon} alt="" className="h-[10px] w-[10px]" />
           </button>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="w-full max-w-[560px] rounded-[12px] bg-white p-6 shadow-[0_20px_25px_rgba(76,103,100,0.1)] sm:p-10" noValidate>
+      <form onSubmit={handleUpdateAccount} className="w-full max-w-[560px] rounded-[12px] bg-white p-6 shadow-[0_20px_25px_rgba(76,103,100,0.1)] sm:p-10" noValidate>
         <h2 className="text-[20px] font-semibold capitalize leading-7">Edit details</h2>
 
         {apiError && (
@@ -226,7 +237,7 @@ const AccountEditForm: React.FC<AccountEditFormProps> = ({
         <div className="mt-6 flex items-center gap-6">
           <button type="submit" disabled={isSubmitting} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[4px] bg-[#299d91] px-8 text-[16px] font-semibold text-white hover:bg-[#278f87] disabled:cursor-not-allowed disabled:opacity-60">
             {isSubmitting && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" />}
-            {isSubmitting ? 'Saving...' : 'Save changes'}
+            {isSubmitting ? 'Saving....' : 'Save changes'}
           </button>
           <button type="button" onClick={onCancel} disabled={isSubmitting} className="p-2 text-[16px] font-semibold text-[#666] disabled:opacity-60">Cancel</button>
         </div>
