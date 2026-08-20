@@ -38,9 +38,9 @@ fix(order): correct total calculation
 
 ```
 
-## 🚀 2. Cursor AI Rules
+## 🚀 2. Codex AI Rules
 
-> Rules specific to **Cursor IDE** for generating standard code automatically.
+> Rules specific to **Codex** for generating standard code automatically.
 
 ### 🧠 General Behavior
 
