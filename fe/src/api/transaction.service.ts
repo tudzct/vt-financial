@@ -1,16 +1,19 @@
 import axiosInstance from './axiosInstance'
-import { ApiResponse, Transaction } from './types'
+import {
+  ApiResponse,
+  Transaction,
+  TransactionFilterType,
+  TransactionListResponse,
+} from './types'
 
 export const transactionService = {
-  // Lấy danh sách giao dịch
-  getTransactions: async (params?: {
-    accountId?: number
-    categoryId?: number
-    type?: 'Revenue' | 'Expense'
-    startDate?: string
-    endDate?: string
-  }): Promise<ApiResponse<Transaction[]>> => {
-    const response = await axiosInstance.get('/transactions', { params })
+  // Lấy danh sách giao dịch có phân trang của người dùng hiện tại
+  getTransactions: async (params: {
+    type: TransactionFilterType
+    limit: number
+    offset: number
+  }): Promise<TransactionListResponse> => {
+    const response = await axiosInstance.get('/v1/transactions', { params })
     return response.data
   },
 
@@ -38,4 +41,3 @@ export const transactionService = {
     return response.data
   },
 }
-

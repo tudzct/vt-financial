@@ -1,5 +1,5 @@
 import React, { ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { useTheme } from '../../context/ThemeContext'
 import NavigationBar from '../NavigationBar/NavigationBar'
@@ -12,10 +12,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { user, isAuthenticated, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
+  const location = useLocation()
 
   const handleLogout = () => {
     logout()
     navigate('/login')
+  }
+
+  if (location.pathname === '/transactions') {
+    return <>{children}</>
   }
 
   return (
@@ -99,4 +104,3 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 }
 
 export default Layout
-

@@ -38,12 +38,20 @@ export interface Transaction {
   transaction_date: string
   type: 'Revenue' | 'Expense'
   item_description: string
-  shop_name?: string
+  shop_name: string
   amount: number
-  payment_method?: string
+  payment_method: string
   status: 'Complete' | 'Pending' | 'Failed'
   receipt_id?: string
   category_id?: number
+}
+
+export type TransactionFilterType = 'All' | 'Revenue' | 'Expense'
+
+export interface TransactionListResponse extends ApiResponse<Transaction[]> {
+  data: Transaction[]
+  total: number
+  hasMore: boolean
 }
 
 export interface Bill {
@@ -67,4 +75,3 @@ export interface Goal {
   target_achieved: boolean
   last_updated: string
 }
-

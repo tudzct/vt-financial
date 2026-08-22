@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
         setIsLoading(true)
         const [accountsRes, transactionsRes] = await Promise.all([
           accountService.getAccounts(),
-          transactionService.getTransactions({}),
+          transactionService.getTransactions({ type: 'All', limit: 5, offset: 0 }),
         ])
 
         if (accountsRes.success && accountsRes.data) {
@@ -168,4 +168,3 @@ const Dashboard: React.FC = () => {
 }
 
 export default Dashboard
-
