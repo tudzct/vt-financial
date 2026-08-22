@@ -254,9 +254,17 @@ const Transactions: React.FC = () => {
         </header>
 
         <main className="px-6 pb-20 pt-5">
-          <h1 className="text-[22px] font-normal tracking-[-0.01em] text-[#8b8d91]">
-            Recent Transaction
-          </h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-[22px] font-normal tracking-[-0.01em] text-[#8b8d91]">
+              Recent Transaction
+            </h1>
+            <NavLink
+              to="/transactions/add"
+              className="rounded-[4px] bg-[#2fa79f] px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#278f88]"
+            >
+              Add Transaction
+            </NavLink>
+          </div>
           <span className="sr-only" aria-live="polite">
             {total} {total === 1 ? 'transaction' : 'transactions'}
           </span>

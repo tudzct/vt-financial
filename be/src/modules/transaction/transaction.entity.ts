@@ -34,7 +34,7 @@ export class Transaction {
   account: Account;
 
   @Column({ name: 'transaction_date', type: 'date' })
-  transactionDate: Date;
+  transactionDate: Date | string;
 
   @Column({
     name: 'type',
@@ -69,10 +69,10 @@ export class Transaction {
   status: TransactionStatus;
 
   @Column({ name: 'receipt_id', type: 'varchar', length: 255, nullable: true })
-  receiptId: string;
+  receiptId: string | null;
 
   @Column({ name: 'category_id', type: 'int', nullable: true })
-  categoryId: number;
+  categoryId: number | null;
 
   @ManyToOne(() => Category, (category) => category.transactions, {
     nullable: true,
@@ -86,4 +86,3 @@ export class Transaction {
   // @UpdateDateColumn({ name: 'updated_at', type: 'timestamp', nullable: true })
   // updatedAt: Date;
 }
-

@@ -1,14 +1,21 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
+  Post,
   Query,
   Request,
   UseGuards,
+  ValidationPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request as ExpressRequest } from 'express';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AuthenticatedRequestUser } from '../auth/jwt.strategy';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { TransactionListQueryDto } from './dto/transaction-list-query.dto';
 import { TransactionService } from './transaction.service';
 
@@ -31,5 +38,29 @@ export class TransactionController {
   ) {
     const query = TransactionListQueryDto.parse(rawQuery);
     return this.transactionService.findAllByUserId(request.user.userId, query);
+  }
+
+  /** Creates a transaction and atomically adjusts its owned account balance. */
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Create a transaction' })
+  create(
+    @Request() request: AuthenticatedRequest,
+    @Body(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        exceptionFactory: () =>
+          new BadRequestException('Invalid or missing transaction data'),
+      }),
+    )
+    createTransactionDto: CreateTransactionDto,
+  ) {
+    return this.transactionService.create(
+      request.user.userId,
+      createTransactionDto,
+    );
   }
 }

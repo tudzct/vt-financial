@@ -19,7 +19,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     navigate('/login')
   }
 
-  if (location.pathname === '/transactions') {
+  if (location.pathname.startsWith('/transactions')) {
     return <>{children}</>
   }
 

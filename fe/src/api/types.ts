@@ -46,6 +46,33 @@ export interface Transaction {
   category_id?: number
 }
 
+export interface CreateTransactionPayload {
+  accountId: number
+  transactionDate: string
+  type: 'Revenue' | 'Expense'
+  itemDescription: string
+  shopName: string
+  amount: number
+  paymentMethod: string
+  status: 'Complete' | 'Pending' | 'Failed'
+  category_id?: number
+}
+
+export interface CreatedTransaction {
+  transactionId: number
+  accountId: number
+  transactionDate: string
+  type: 'Revenue' | 'Expense'
+  itemDescription: string
+  shopName: string
+  amount: number
+  paymentMethod: string
+  status: 'Complete' | 'Pending' | 'Failed'
+  receiptId: string | null
+  createdAt: string
+  category_id: number | null
+}
+
 export type TransactionFilterType = 'All' | 'Revenue' | 'Expense'
 
 export interface TransactionListResponse extends ApiResponse<Transaction[]> {
