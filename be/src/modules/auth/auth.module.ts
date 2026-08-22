@@ -6,7 +6,7 @@ import { User } from '../user/user.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
-/** Wires registration persistence and JWT issuance. */
+/** Wires authentication persistence and JWT issuance. */
 @Module({
   imports: [
     TypeOrmModule.forFeature([User]),

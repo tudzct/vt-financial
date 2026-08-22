@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (username: string, password: string) => Promise<void>
+  login: (email: string, password: string) => Promise<void>
   logout: () => void
   updateUser: (userData: User) => void
 }
@@ -36,19 +36,31 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(false)
   }, [])
 
-  const login = async (username: string, password: string) => {
+  /** Establishes a local authenticated session from the login response. */
+  const login = async (email: string, password: string) => {
     try {
-      const response = await authService.login({ username, password })
+      const response = await authService.login({ email, password })
       if (response.success && response.data) {
-        const { user: userData, token } = response.data
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(userData))
-        setUser(userData)
+        const { user: loginUser, accessToken } = response.data
+        const mappedUser: User = {
+          user_id: loginUser.id,
+          full_name: loginUser.fullName,
+          email: loginUser.email,
+          username: loginUser.email.split('@')[0],
+          total_balance: 0,
+        }
+        localStorage.setItem('token', accessToken)
+        localStorage.setItem('user', JSON.stringify(mappedUser))
+        setUser(mappedUser)
       } else {
-        throw new Error(response.message || 'Đăng nhập thất bại')
+        throw new Error(response.message || 'Đăng nhập thất bại. Vui lòng thử lại.')
       }
-    } catch (error: any) {
-      throw new Error(error.response?.data?.message || 'Đăng nhập thất bại')
+    } catch (error: unknown) {
+      const apiMessage = (error as { response?: { data?: { message?: string | string[] } } })
+        .response?.data?.message
+      const message = Array.isArray(apiMessage) ? apiMessage.join(' ') : apiMessage
+      const localMessage = error instanceof globalThis.Error ? error.message : ''
+      throw new Error(message || localMessage || 'Đăng nhập thất bại. Vui lòng thử lại.')
     }
   }
 
@@ -85,4 +97,3 @@ export const useAuth = () => {
   }
   return context
 }
-

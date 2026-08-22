@@ -4,26 +4,28 @@ import {
   HttpException,
   Injectable,
   InternalServerErrorException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { DataSource, QueryFailedError } from 'typeorm';
 import { User } from '../user/user.entity';
+import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 
-interface RegisteredUser {
+interface AuthenticatedUser {
   id: number;
   fullName: string;
   email: string;
 }
 
-export interface RegisterResponse {
+export interface AuthResponse {
   success: true;
   message: string;
   data: {
     accessToken: string;
-    user: RegisteredUser;
+    user: AuthenticatedUser;
   };
 }
 
@@ -35,8 +37,47 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  /** Verifies normalized credentials and issues a signed access token. */
+  async login(loginDto: LoginDto): Promise<AuthResponse> {
+    const email = loginDto.email.trim().toLowerCase();
+
+    try {
+      const user = await this.dataSource
+        .getRepository(User)
+        .createQueryBuilder('user')
+        .where('LOWER(TRIM(user.email)) = :email', { email })
+        .getOne();
+
+      if (!user || !(await compare(loginDto.password, user.password))) {
+        throw new UnauthorizedException('Email hoặc mật khẩu không đúng.');
+      }
+
+      const authenticatedUser: AuthenticatedUser = {
+        id: user.userId,
+        fullName: user.fullName,
+        email: user.email,
+      };
+      const accessToken = await this.jwtService.signAsync({
+        sub: user.userId,
+        email: user.email,
+      });
+
+      return {
+        success: true,
+        message: 'Đăng nhập thành công',
+        data: { accessToken, user: authenticatedUser },
+      };
+    } catch (error: unknown) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      throw new InternalServerErrorException('Internal Server Error');
+    }
+  }
+
   /** Creates exactly one normalized user and issues its JWT atomically. */
-  async register(registerDto: RegisterDto): Promise<RegisterResponse> {
+  async register(registerDto: RegisterDto): Promise<AuthResponse> {
     const fullName = registerDto.fullName.normalize('NFC').trim();
     const email = registerDto.email.trim().toLowerCase();
 
@@ -66,7 +107,7 @@ export class AuthService {
           totalBalance: 0,
         });
         const createdUser = await manager.getRepository(User).save(user);
-        const registeredUser: RegisteredUser = {
+        const registeredUser: AuthenticatedUser = {
           id: createdUser.userId,
           fullName: createdUser.fullName,
           email: createdUser.email,

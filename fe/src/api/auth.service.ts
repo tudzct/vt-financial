@@ -2,7 +2,7 @@ import axiosInstance from './axiosInstance'
 import { ApiResponse, User } from './types'
 
 export interface LoginRequest {
-  username: string
+  email: string
   password: string
 }
 
@@ -24,9 +24,11 @@ export interface RegisterData {
   user: RegisteredUser
 }
 
+export type LoginData = RegisterData
+
 export const authService = {
   // Đăng nhập
-  login: async (data: LoginRequest): Promise<ApiResponse<{ user: User; token: string }>> => {
+  login: async (data: LoginRequest): Promise<ApiResponse<LoginData>> => {
     const response = await axiosInstance.post('/auth/login', data)
     return response.data
   },
